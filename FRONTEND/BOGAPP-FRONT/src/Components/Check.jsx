@@ -34,10 +34,7 @@ function Check() {
       })
       .then((data) => {
         alert(data.message);
-
-        setEstudios((prev) =>
-          prev.filter((estudio) => estudio.Estudio_ID !== id),
-        );
+        window.location.reload();
       })
       .catch((err) => console.log(err));
   }
