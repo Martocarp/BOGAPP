@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+//RECHARTS
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
@@ -169,7 +169,7 @@ app.post("/users", function (req, res) {
           message: "Usuario creado correctamente",
           id: results.insertId,
         });
-      }
+      },
     );
   });
 });
@@ -217,7 +217,7 @@ app.put("/users/:id", function (req, res) {
       res.status(200).json({
         message: "Usuario modificado correctamente",
       });
-    }
+    },
   );
 });
 
@@ -361,7 +361,7 @@ app.post("/estudios", function (req, res) {
           estudio_id: results.insertId,
           estado: "PENDIENTE",
         });
-      }
+      },
     );
   });
 });
@@ -403,7 +403,7 @@ app.put("/estudios/:id", function (req, res) {
       res.status(200).json({
         message: "Estudio modificado correctamente",
       });
-    }
+    },
   );
 });
 
@@ -458,39 +458,44 @@ app.patch("/estudios/:id/estado", function (req, res) {
         WHERE Estudio_ID = ? AND Estado = 'PENDIENTE'
       `;
 
-      connection.query(consulta, [Estado, Revisado_Por_ID, id], (err, results) => {
-        if (err) {
-          return connection.rollback(() => {
-            res.status(500).json({ message: "Error al actualizar estado" });
-          });
-        }
-
-        if (results.affectedRows === 0) {
-          return connection.rollback(() => {
-            res.status(409).json({ message: "Estudio inexistente o ya revisado" });
-          });
-        }
-
-        const guardarCambios = () => {
-          connection.commit((err) => {
-            if (err) {
-              return connection.rollback(() => {
-                res.status(500).json({ message: "Error al guardar cambios" });
-              });
-            }
-
-            res.status(200).json({
-              message: "Estado actualizado correctamente",
-              estado: Estado,
+      connection.query(
+        consulta,
+        [Estado, Revisado_Por_ID, id],
+        (err, results) => {
+          if (err) {
+            return connection.rollback(() => {
+              res.status(500).json({ message: "Error al actualizar estado" });
             });
-          });
-        };
+          }
 
-        if (Estado === "RECHAZADO") {
-          return guardarCambios();
-        }
+          if (results.affectedRows === 0) {
+            return connection.rollback(() => {
+              res
+                .status(409)
+                .json({ message: "Estudio inexistente o ya revisado" });
+            });
+          }
 
-        const vincular = `
+          const guardarCambios = () => {
+            connection.commit((err) => {
+              if (err) {
+                return connection.rollback(() => {
+                  res.status(500).json({ message: "Error al guardar cambios" });
+                });
+              }
+
+              res.status(200).json({
+                message: "Estado actualizado correctamente",
+                estado: Estado,
+              });
+            });
+          };
+
+          if (Estado === "RECHAZADO") {
+            return guardarCambios();
+          }
+
+          const vincular = `
           INSERT INTO Profesionales_Estudios
           (Usuario_ID, Estudio_ID, Rol_Estudio, Origen, Estado)
           SELECT Creado_Por_ID, Estudio_ID, 'ADMIN_ESTUDIO', 'CREADOR', 'ACTIVO'
@@ -498,19 +503,20 @@ app.patch("/estudios/:id/estado", function (req, res) {
           WHERE Estudio_ID = ?
         `;
 
-        connection.query(vincular, [id], (err) => {
-          if (err) {
-            console.log("Error:", err.message);
-            return connection.rollback(() => {
-              res.status(500).json({
-                message: "Error al asignar administrador del estudio",
+          connection.query(vincular, [id], (err) => {
+            if (err) {
+              console.log("Error:", err.message);
+              return connection.rollback(() => {
+                res.status(500).json({
+                  message: "Error al asignar administrador del estudio",
+                });
               });
-            });
-          }
+            }
 
-          guardarCambios();
-        });
-      });
+            guardarCambios();
+          });
+        },
+      );
     });
   });
 });

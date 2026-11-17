@@ -8,7 +8,6 @@ function Login() {
 
   const navigate = useNavigate();
 
-  // CUENTAS DE PRUEBA
   const usuarios = [
     {
       email: "admin@bogapp",

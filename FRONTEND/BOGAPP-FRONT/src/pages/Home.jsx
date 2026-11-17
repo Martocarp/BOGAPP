@@ -1,12 +1,7 @@
-import Check from "../Components/Check";
-import Estudios_d from "../Components/Estudios_d";
+import Dashboard_a from "../Components/Dashboard_a";
+
 function Home() {
-  return (
-    <div>
-      <h1>HOME ADMIN</h1>
-      <Estudios_d />
-      <Check></Check>
-    </div>
-  );
+  return <Dashboard_a />;
 }
+
 export default Home;
