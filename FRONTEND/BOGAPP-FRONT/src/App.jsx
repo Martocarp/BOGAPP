@@ -1,24 +1,49 @@
 import { BrowserRouter, Routes, Route as RUTA } from "react-router-dom";
+import Home_p from "./pages/Home_p";
+import Home_c from "./pages/Home_c";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
 import RutaPrivada from "./Components/RutaPrivada";
+
 import "./App.css";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <RUTA path="/login" element={<Login />} />
+
         <RUTA
           path="/"
           element={
-            <RutaPrivada>
+            <RutaPrivada rol="ADMIN_BOGAPP">
               <Home />
             </RutaPrivada>
           }
         />
 
-        <RUTA path="/login" element={<h1>LOGIN BOGAPP</h1>} />
+        <RUTA
+          path="/profesional"
+          element={
+            <RutaPrivada rol="PROFESIONAL">
+              <Home_p />
+            </RutaPrivada>
+          }
+        />
 
-        <RUTA path="/sin-permiso" element={<h1>ACCESO DENEGADO</h1>} />
+        <RUTA
+          path="/cliente"
+          element={
+            <RutaPrivada rol="CLIENTE">
+              <Home_c />
+            </RutaPrivada>
+          }
+        />
+
+        <RUTA
+          path="/sin-permiso"
+          element={<h1>No tenés permiso para entrar a esta página</h1>}
+        />
       </Routes>
     </BrowserRouter>
   );
