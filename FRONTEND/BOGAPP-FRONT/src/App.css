@@ -660,3 +660,89 @@ button:disabled {
     padding: 20px;
   }
 }
+
+/* ==================================
+   BOGAPP - REGISTRO DE USUARIOS
+================================== */
+
+.registro {
+  width: min(450px, calc(100% - 30px));
+  margin: 60px auto;
+  padding: 35px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
+}
+
+.registro h1 {
+  text-align: center;
+  color: #172c45;
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.registro h2 {
+  text-align: center;
+  color: #172c45;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.registro > p {
+  text-align: center;
+}
+
+.registro form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 25px;
+}
+
+.registro input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+}
+
+.registro form button {
+  background: #172c45;
+  color: white;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.registro form button:hover {
+  background: #294c70;
+}
+
+.registro-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.registro-link a {
+  color: #bf965b;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.registro-link a:hover {
+  text-decoration: underline;
+}
+
+.mensaje-ok {
+  color: #16794f;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+.mensaje-error {
+  color: #bf3030;
+  font-weight: bold;
+  margin-top: 15px;
+}

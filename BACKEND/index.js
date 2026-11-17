@@ -114,15 +114,18 @@ app.get("/users/:id", function (req, res) {
 });
 
 // POST - Registrar usuario con contraseña
+
 app.post("/users", function (req, res) {
   const { Nombre, Apellido, Email, Password, Tipo_Cuenta } = req.body;
 
+  // VALIDAR DATOS
   if (!Nombre || !Apellido || !Email || !Password || !Tipo_Cuenta) {
     return res.status(400).json({
       message: "Faltan datos obligatorios",
     });
   }
 
+  // SOLO CLIENTES Y PROFESIONALES
   if (Tipo_Cuenta !== "CLIENTE" && Tipo_Cuenta !== "PROFESIONAL") {
     return res.status(400).json({
       message: "Tipo de cuenta no permitido",
@@ -135,38 +138,40 @@ app.post("/users", function (req, res) {
     });
   }
 
+  // CREAR HASH DE CONTRASEÑA
   bcrypt.hash(Password, 10, (err, hash) => {
     if (err) {
-      console.log("Error al generar hash:", err.message);
       return res.status(500).json({
         message: "Error al procesar contraseña",
       });
     }
 
     const consulta = `
-      INSERT INTO Usuarios (Nombre, Apellido, Email, Password_Hash, Tipo_Cuenta)
+      INSERT INTO Usuarios
+      (Nombre, Apellido, Email, Password_Hash, Tipo_Cuenta)
       VALUES (?, ?, ?, ?, ?)
     `;
 
     connection.query(
       consulta,
-      [Nombre, Apellido, Email, hash, Tipo_Cuenta],
+      [Nombre, Apellido, Email.trim().toLowerCase(), hash, Tipo_Cuenta],
       (err, results) => {
         if (err) {
           if (err.code === "ER_DUP_ENTRY") {
             return res.status(409).json({
-              message: "Email ya registrado",
+              message: "El email ya está registrado",
             });
           }
 
           console.log("Error:", err.message);
+
           return res.status(500).json({
-            message: "Error al crear usuario",
+            message: "Error al registrar usuario",
           });
         }
 
         res.status(201).json({
-          message: "Usuario creado correctamente",
+          message: "Usuario registrado correctamente",
           id: results.insertId,
         });
       },

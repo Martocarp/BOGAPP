@@ -10,7 +10,7 @@ import Home from "./pages/Home";
 import Home_p from "./pages/Home_p";
 import Home_c from "./pages/Home_c";
 import Login from "./pages/Login";
-
+import Create_c from "./pages/Create_c";
 import RutaPrivada from "./Components/RutaPrivada";
 import Estudios_d from "./Components/Estudios_d";
 import Check from "./Components/Check";
@@ -54,7 +54,7 @@ function App() {
       <Routes>
         {/* LOGIN */}
         <RUTA path="/login" element={<Login />} />
-
+        <RUTA path="/register" element={<Create_c />} />
         {/* RUTAS DEL ADMIN */}
         <RUTA
           path="/"

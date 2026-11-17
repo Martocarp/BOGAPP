@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -79,6 +78,9 @@ function Login() {
         />
 
         <button type="submit">Ingresar</button>
+        <p className="registro-link">
+          Don't have an account? <Link to="/register">Register now</Link>
+        </p>
       </form>
 
       {error && <p>{error}</p>}
