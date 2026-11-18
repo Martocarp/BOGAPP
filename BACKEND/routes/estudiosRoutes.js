@@ -1,0 +1,16 @@
+const router = require("express").Router();
+const c = require("../controllers/estudiosController");
+const { autenticar, permitirRoles } = require("../middlewares/authMiddleware");
+const { adminDeEstudio } = require("../middlewares/estudioMiddleware");
+router.use(autenticar);
+router.get("/mis", permitirRoles("PROFESIONAL"), c.mis);
+router.get("/", c.listar);
+router.post("/", permitirRoles("PROFESIONAL"), c.crear);
+router.get("/:id/profesionales", adminDeEstudio, c.profesionales);
+router.post("/:id/profesionales", adminDeEstudio, c.agregarProfesional);
+router.delete("/:id/profesionales/:usuarioId", adminDeEstudio, c.quitarProfesional);
+router.patch("/:id/estado", permitirRoles("ADMIN_BOGAPP"), c.cambiarEstado);
+router.get("/:id", c.buscar);
+router.put("/:id", adminDeEstudio, c.editar);
+router.delete("/:id", permitirRoles("ADMIN_BOGAPP"), c.eliminar);
+module.exports = router;

@@ -1,91 +1,45 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import useAuth from "../context/useAuth";
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
+  const [enviando, setEnviando] = useState(false);
+  const { ingresar } = useAuth();
   const navigate = useNavigate();
 
-  const usuarios = [
-    {
-      email: "admin@bogapp",
-      password: "1234",
-      Tipo_Cuenta: "ADMIN_BOGAPP",
-    },
-    {
-      email: "abogado@bogapp",
-      password: "1234",
-      Tipo_Cuenta: "PROFESIONAL",
-    },
-    {
-      email: "cliente@bogapp",
-      password: "1234",
-      Tipo_Cuenta: "CLIENTE",
-    },
-  ];
-
-  function iniciarSesion(e) {
+  async function iniciarSesion(e) {
     e.preventDefault();
-
-    const usuario = usuarios.find(
-      (u) => u.email === email.trim().toLowerCase() && u.password === password,
-    );
-
-    if (!usuario) {
-      setError("Email o contraseña incorrectos");
-      return;
-    }
-
-    // Guardamos el usuario simulado, sin la contraseña
-    localStorage.setItem(
-      "usuarioDemo",
-      JSON.stringify({
-        email: usuario.email,
-        Tipo_Cuenta: usuario.Tipo_Cuenta,
-      }),
-    );
-
-    if (usuario.Tipo_Cuenta === "ADMIN_BOGAPP") {
-      navigate("/");
-    } else if (usuario.Tipo_Cuenta === "PROFESIONAL") {
-      navigate("/profesional");
-    } else if (usuario.Tipo_Cuenta === "CLIENTE") {
-      navigate("/cliente");
-    }
+    setError(""); setEnviando(true);
+    try {
+      const usuario = await ingresar(email, password);
+      const rutas = { ADMIN_BOGAPP: "/", PROFESIONAL: "/profesional", CLIENTE: "/cliente" };
+      navigate(rutas[usuario.Tipo_Cuenta] || "/sin-permiso", { replace: true });
+    } catch (err) { setError(err.message); }
+    finally { setEnviando(false); }
   }
 
   return (
-    <div>
+    <div className="auth-page">
+      <div className="auth-mark">⚖</div>
       <h1>BOGAPP</h1>
+      <p className="auth-subtitle">Plataforma de gestión jurídica</p>
       <h2>Iniciar sesión</h2>
-
       <form onSubmit={iniciarSesion}>
-        <input
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        <button type="submit">Ingresar</button>
-        <p className="registro-link">
-          Don't have an account? <Link to="/register">Register now</Link>
-        </p>
+        <label>Correo electrónico</label>
+        <input type="email" placeholder="tu@email.com" value={email}
+          onChange={e => setEmail(e.target.value)} required autoComplete="email" />
+        <label>Contraseña</label>
+        <input type="password" placeholder="Tu contraseña" value={password}
+          onChange={e => setPassword(e.target.value)} required autoComplete="current-password" />
+        <button type="submit" disabled={enviando}>{enviando ? "Ingresando..." : "Iniciar sesión"}</button>
       </form>
-
-      {error && <p>{error}</p>}
+      {error && <p className="error-text" role="alert">{error}</p>}
+      <p className="auth-footer">¿No tenés cuenta? <Link to="/register">Registrate como cliente</Link></p>
+      <p className="auth-footer"><Link to="/register/profesional">Crear cuenta profesional</Link></p>
     </div>
   );
 }
-
 export default Login;

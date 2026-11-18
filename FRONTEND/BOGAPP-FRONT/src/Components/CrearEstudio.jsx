@@ -1,89 +1,40 @@
 import { useState } from "react";
+import { enviarJSON } from "../api";
 
-function CrearEstudio() {
+function CrearEstudio({ onCreado }) {
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
   const [telefono, setTelefono] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
-  // ID de un profesional de prueba registrado en MySQL
-  const profesionalId = 2;
-
-  function solicitarEstudio(e) {
-    e.preventDefault();
-    setMensaje("");
-    setEnviando(true);
-
-    fetch("http://localhost:8000/estudios", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        Nombre: nombre,
-        Direccion: direccion,
-        Telefono: telefono,
-        Creado_Por_ID: profesionalId,
-      }),
-    })
-      .then((res) => {
-        return res.json().then((data) => {
-          if (!res.ok) {
-            throw new Error(data.message || "Error al crear estudio");
-          }
-          return data;
-        });
-      })
-      .then((data) => {
-        setMensaje(data.message);
-        setNombre("");
-        setDireccion("");
-        setTelefono("");
-      })
-      .catch((err) => {
-        setMensaje(err.message);
-      })
-      .finally(() => {
-        setEnviando(false);
+  async function solicitarEstudio(e) {
+    e.preventDefault(); setMensaje(""); setError(""); setEnviando(true);
+    try {
+      const data = await enviarJSON("POST", "/estudios", {
+        Nombre: nombre, Direccion: direccion, Telefono: telefono,
+        // El backend obtiene Creado_Por_ID de la sesión, no desde React.
       });
+      setMensaje(data.message);
+      setNombre(""); setDireccion(""); setTelefono("");
+      if (onCreado) onCreado();
+    } catch (err) { setError(err.message); }
+    finally { setEnviando(false); }
   }
-
   return (
-    <div>
-      <h2>Solicitar nuevo estudio jurídico</h2>
-
-      <form onSubmit={solicitarEstudio}>
-        <input
-          type="text"
-          placeholder="Nombre del estudio"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="Dirección"
-          value={direccion}
-          onChange={(e) => setDireccion(e.target.value)}
-        />
-
-        <input
-          type="tel"
-          placeholder="Teléfono"
-          value={telefono}
-          onChange={(e) => setTelefono(e.target.value)}
-        />
-
-        <button type="submit" disabled={enviando}>
-          {enviando ? "Enviando..." : "Solicitar estudio"}
-        </button>
+    <section className="panel-card">
+      <h2>Solicitar un estudio jurídico</h2>
+      <p>El Super Admin deberá aprobar la solicitud para activar el estudio.</p>
+      <form onSubmit={solicitarEstudio} className="form-grid">
+        <label>Nombre del estudio<input value={nombre} onChange={e => setNombre(e.target.value)} required placeholder="Estudio Jurídico..." /></label>
+        <label>Dirección<input value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Dirección" /></label>
+        <label>Teléfono<input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Teléfono" /></label>
+        <button type="submit" disabled={enviando}>{enviando ? "Enviando..." : "Enviar solicitud"}</button>
       </form>
-
-      {mensaje && <p>{mensaje}</p>}
-    </div>
+      {mensaje && <p className="success-text">{mensaje}</p>}
+      {error && <p className="error-text">{error}</p>}
+    </section>
   );
 }
-
 export default CrearEstudio;
