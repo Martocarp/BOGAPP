@@ -1,5 +1,6 @@
 const db = require("../config/db");
 const { borrarEstudios } = require("./adminDelete");
+const { borrar: borrarArchivo } = require("../helpers/archivos");
 
 // Admin ve TODOS, profesional solo propios/vinculados, cliente solo aprobados.
 function listar(req, res) {
@@ -115,8 +116,9 @@ async function eliminar(req, res) {
     if (!rows.length) { await conn.rollback(); return res.status(404).json({ message: "Estudio no encontrado" }); }
     // A diferencia del borrado anterior, el super admin puede borrar un estudio APROBADO,
     // eliminando también sus relaciones y casos en una misma transacción.
-    await borrarEstudios(conn, [id]);
+    const archivos = await borrarEstudios(conn, [id]);
     await conn.commit();
+    await Promise.all((archivos || []).map(borrarArchivo));
     return res.json({ message: "Estudio y datos relacionados eliminados" });
   } catch (err) {
     await conn.rollback();
@@ -155,10 +157,26 @@ function agregarProfesional(req, res) {
   });
 }
 function quitarProfesional(req, res) {
-  db.query("DELETE FROM Profesionales_Estudios WHERE Estudio_ID = ? AND Usuario_ID = ?", [req.params.id, req.params.usuarioId], (err, result) => {
-    if (err) return res.status(409).json({ message: "No se puede desvincular: puede estar asociado a casos. Reasigná primero" });
-    if (!result.affectedRows) return res.status(404).json({ message: "Vínculo inexistente" });
-    return res.json({ message: "Profesional desvinculado" });
-  });
+  const estudioId = Number(req.params.id), usuarioId = Number(req.params.usuarioId);
+  // No dejar un estudio aprobado sin ningún ADMIN_ESTUDIO activo.
+  db.query(`SELECT Rol_Estudio FROM Profesionales_Estudios WHERE Estudio_ID=? AND Usuario_ID=?`,
+    [estudioId, usuarioId], (err, rows) => {
+      if (err) return res.status(500).json({ message: "Error al verificar profesional" });
+      if (!rows.length) return res.status(404).json({ message: "Vínculo inexistente" });
+      const eliminar = () => db.query("DELETE FROM Profesionales_Estudios WHERE Estudio_ID=? AND Usuario_ID=?",
+        [estudioId, usuarioId], (err, result) => {
+          if (err) return res.status(409).json({ message: "Profesional asignado a expedientes. Reasigná los casos primero" });
+          if (!result.affectedRows) return res.status(404).json({ message: "Vínculo inexistente" });
+          return res.json({ message: "Profesional desvinculado" });
+        });
+      if (rows[0].Rol_Estudio !== 'ADMIN_ESTUDIO') return eliminar();
+      db.query(`SELECT COUNT(*) AS total FROM Profesionales_Estudios WHERE Estudio_ID=?
+        AND Rol_Estudio='ADMIN_ESTUDIO' AND Estado='ACTIVO'`, [estudioId], (err, totals) => {
+        if (err) return res.status(500).json({ message: "Error al comprobar administradores" });
+        if (totals[0].total <= 1) return res.status(409).json({ message: "El estudio debe conservar al menos un ADMIN_ESTUDIO activo" });
+        eliminar();
+      });
+    });
 }
+
 module.exports = { listar, mis, buscar, crear, editar, cambiarEstado, eliminar, profesionales, agregarProfesional, quitarProfesional };

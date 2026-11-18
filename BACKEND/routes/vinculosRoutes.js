@@ -1,0 +1,12 @@
+const router=require('express').Router();
+const c=require('../controllers/vinculosController');
+const {autenticar,permitirRoles}=require('../middlewares/authMiddleware');
+router.use(autenticar);
+router.get('/mis',permitirRoles('CLIENTE'),c.mis);
+router.post('/solicitar-estudio',permitirRoles('CLIENTE'),c.pedirEstudio);
+router.post('/solicitar-profesional',permitirRoles('CLIENTE'),c.pedirProfesional);
+router.patch('/cliente/estudios/:estudioId',permitirRoles('CLIENTE'),c.responderEstudioComoCliente);
+router.patch('/cliente/profesionales/:profesionalId',permitirRoles('CLIENTE'),c.responderProfesionalComoCliente);
+router.patch('/profesional/estudios/:estudioId/clientes/:clienteId',permitirRoles('PROFESIONAL'),c.responderEstudioComoAdmin);
+router.patch('/profesional/particulares/:clienteId',permitirRoles('PROFESIONAL'),c.responderParticularComoProfesional);
+module.exports=router;

@@ -1,5 +1,6 @@
 const db = require("../config/db");
 const { borrarUsuario } = require("./adminDelete");
+const { borrar: borrarArchivo } = require("../helpers/archivos");
 
 function listar(req, res) {
   db.query(
@@ -56,8 +57,9 @@ async function eliminar(req, res) {
     if (rows[0].Tipo_Cuenta === "ADMIN_BOGAPP") {
       await conn.rollback(); return res.status(403).json({ message: "No se eliminan otros Super Admin desde el panel" });
     }
-    await borrarUsuario(conn, id);
+    const archivos = await borrarUsuario(conn, id);
     await conn.commit();
+    await Promise.all((archivos || []).map(borrarArchivo));
     return res.json({ message: "Usuario y sus datos relacionados eliminados correctamente" });
   } catch (err) {
     await conn.rollback();

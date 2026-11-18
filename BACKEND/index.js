@@ -30,11 +30,17 @@ app.use("/auth", require("./routes/authRoutes"));
 app.use("/users", require("./routes/usuariosRoutes"));
 app.use("/estudios", require("./routes/estudiosRoutes"));
 app.use("/admin", require("./routes/adminRoutes"));
+app.use("/profesional", require("./routes/profesionalRoutes"));
+app.use("/especializaciones", require("./routes/especializacionesRoutes"));
+app.use("/casos", require("./routes/casosRoutes"));
+app.use("/vinculos", require("./routes/vinculosRoutes"));
 app.use("/", require("./routes/listadosRoutes"));
 
 app.use(function (req, res) { res.status(404).json({ message: "Ruta inexistente" }); });
 app.use(function (err, req, res, next) {
   console.error("Error Express:", err.message);
+  if (err.code === "LIMIT_FILE_SIZE") return res.status(413).json({ message: "Archivo demasiado grande (máximo 8 MB)" });
+  if (err.name === "MulterError") return res.status(400).json({ message: "Archivo inválido" });
   res.status(500).json({ message: "Error interno del servidor" });
 });
 

@@ -11,6 +11,14 @@ import RutaPrivada from "./Components/RutaPrivada";
 import Salir from "./Components/Salir";
 import Home from "./pages/Home";
 import Home_p from "./pages/Home_p";
+import ProDashboard from "./pages/profesional/ProDashboard";
+import ProEstudios from "./pages/profesional/ProEstudios";
+import ProClientes from "./pages/profesional/ProClientes";
+import ProCasos from "./pages/profesional/ProCasos";
+import ProDetalleCaso from "./pages/profesional/ProDetalleCaso";
+import ProPerfil from "./pages/profesional/ProPerfil";
+import ProIntegrantes from "./pages/profesional/ProIntegrantes";
+import ProConfiguracion from "./pages/profesional/ProConfiguracion";
 import Home_c from "./pages/Home_c";
 import Login from "./pages/Login";
 import Create_c from "./pages/Create_c";
@@ -87,14 +95,16 @@ function App() {
             <RUTA path="admin/usuarios" element={<UsuariosAdmin />} />
             <RUTA path="admin/limpieza" element={<EliminarEstudios />} />
           </RUTA>
-          <RUTA
-            path="/profesional"
-            element={
-              <RutaPrivada rol="PROFESIONAL">
-                <Home_p />
-              </RutaPrivada>
-            }
-          />
+          <RUTA path="/profesional" element={<RutaPrivada rol="PROFESIONAL"><Home_p /></RutaPrivada>}>
+            <RUTA index element={<ProDashboard />} />
+            <RUTA path="estudios" element={<ProEstudios />} />
+            <RUTA path="clientes" element={<ProClientes />} />
+            <RUTA path="casos" element={<ProCasos />} />
+            <RUTA path="casos/:id" element={<ProDetalleCaso />} />
+            <RUTA path="integrantes" element={<ProIntegrantes />} />
+            <RUTA path="configuracion" element={<ProConfiguracion />} />
+            <RUTA path="perfil" element={<ProPerfil />} />
+          </RUTA>
           <RUTA
             path="/cliente"
             element={

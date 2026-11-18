@@ -1,11 +1,14 @@
 const router = require("express").Router();
 const c = require("../controllers/estudiosController");
+const esp = require("../controllers/especializacionesEstudioController");
 const { autenticar, permitirRoles } = require("../middlewares/authMiddleware");
 const { adminDeEstudio } = require("../middlewares/estudioMiddleware");
 router.use(autenticar);
 router.get("/mis", permitirRoles("PROFESIONAL"), c.mis);
 router.get("/", c.listar);
 router.post("/", permitirRoles("PROFESIONAL"), c.crear);
+router.get("/:id/especializaciones", esp.obtener);
+router.put("/:id/especializaciones", esp.guardar);
 router.get("/:id/profesionales", adminDeEstudio, c.profesionales);
 router.post("/:id/profesionales", adminDeEstudio, c.agregarProfesional);
 router.delete("/:id/profesionales/:usuarioId", adminDeEstudio, c.quitarProfesional);
