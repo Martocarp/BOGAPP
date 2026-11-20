@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react';
+import CambiarClave from '../../Components/CambiarClave';
 import {api,enviarJSON,descargarArchivo} from '../../api';
 import {mostrarAlerta,confirmarAccion} from '../../utils/alertas';
 function ProPerfil() {
@@ -41,8 +42,9 @@ function ProPerfil() {
       :<p>No subiste ningún CV.</p>}
       <form onSubmit={subir} className="pro-search-form"><label>Subir o reemplazar CV<input type="file" accept=".pdf,application/pdf" onChange={e=>setArchivo(e.target.files?.[0]||null)} required/></label>
         <button disabled={ocupado||!archivo}>Guardar PDF</button></form>
-      <p className="help-text">Máximo 8 MB. No se publica automáticamente; el acceso a terceros se habilitará al desarrollar la búsqueda de profesionales.</p>
+      <p className="help-text">Máximo 8 MB. Tu CV solo será descargable por clientes si activás «CV disponible para compartir» y guardás el perfil.</p>
     </section>
+    <CambiarClave />
   </section>;
 }
 export default ProPerfil;

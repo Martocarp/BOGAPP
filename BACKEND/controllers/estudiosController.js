@@ -3,21 +3,32 @@ const { borrarEstudios } = require("./adminDelete");
 const { borrar: borrarArchivo } = require("../helpers/archivos");
 
 // Admin ve TODOS, profesional solo propios/vinculados, cliente solo aprobados.
+// CLIENTE: solo ve estudios aprobados, sus datos públicos y áreas jurídicas.
+// ADMIN y PROFESIONAL mantienen el listado original que usan sus paneles.
 function listar(req, res) {
   const rol = req.usuario.Tipo_Cuenta;
-  let sql = `SELECT e.*, CONCAT(u.Nombre, ' ', u.Apellido) AS Solicitante
-    FROM Estudios e JOIN Usuarios u ON e.Creado_Por_ID = u.Usuario_ID`;
-  let params = [];
-  if (rol === "PROFESIONAL") {
-    sql += ` WHERE e.Creado_Por_ID = ? OR EXISTS (
-      SELECT 1 FROM Profesionales_Estudios pe WHERE pe.Estudio_ID = e.Estudio_ID AND pe.Usuario_ID = ? AND pe.Estado = 'ACTIVO')`;
-    params = [req.usuario.Usuario_ID, req.usuario.Usuario_ID];
-  } else if (rol === "CLIENTE") {
-    sql += " WHERE e.Estado = 'APROBADO'";
+  let sql, params = [];
+  if (rol === 'CLIENTE') {
+    sql = `SELECT e.Estudio_ID, e.Nombre, e.Direccion, e.Telefono, e.Estado,
+      (SELECT GROUP_CONCAT(ee.Especializacion_ID) FROM Estudios_Especializaciones ee
+        WHERE ee.Estudio_ID=e.Estudio_ID) AS Areas_ID,
+      (SELECT GROUP_CONCAT(x.Nombre SEPARATOR ', ') FROM Estudios_Especializaciones ee
+        JOIN Especializaciones x ON x.Especializacion_ID=ee.Especializacion_ID
+        WHERE ee.Estudio_ID=e.Estudio_ID) AS Areas
+      FROM Estudios e WHERE e.Estado='APROBADO'`;
+  } else {
+    sql = `SELECT e.*, CONCAT(u.Nombre, ' ', u.Apellido) AS Solicitante
+      FROM Estudios e JOIN Usuarios u ON e.Creado_Por_ID=u.Usuario_ID`;
+    if (rol === 'PROFESIONAL') {
+      sql += ` WHERE e.Creado_Por_ID=? OR EXISTS
+        (SELECT 1 FROM Profesionales_Estudios pe WHERE pe.Estudio_ID=e.Estudio_ID
+        AND pe.Usuario_ID=? AND pe.Estado='ACTIVO')`;
+      params = [req.usuario.Usuario_ID, req.usuario.Usuario_ID];
+    }
   }
-  sql += " ORDER BY e.Fecha_Creacion DESC, e.Estudio_ID DESC";
-  db.query(sql, params, (err, rows) => err ?
-    res.status(500).json({ message: "Error al obtener estudios" }) : res.json(rows));
+  sql += ' ORDER BY e.Fecha_Creacion DESC, e.Estudio_ID DESC';
+  db.query(sql, params, (err, rows) => err
+    ? res.status(500).json({message:'Error al obtener estudios'}) : res.json(rows));
 }
 
 function mis(req, res) {
@@ -62,15 +73,13 @@ function crear(req, res) {
 function editar(req, res) {
   const { Nombre, Direccion, Telefono } = req.body;
   if (typeof Nombre !== "string" || !Nombre.trim()) return res.status(400).json({ message: "El nombre es obligatorio" });
-  const actualizar = () => db.query(
-    "UPDATE Estudios SET Nombre = ?, Direccion = ?, Telefono = ? WHERE Estudio_ID = ?",
+  db.query('UPDATE Estudios SET Nombre=?, Direccion=?, Telefono=? WHERE Estudio_ID=?',
     [Nombre.trim(), Direccion || null, Telefono || null, req.params.id],
     (err, result) => {
-      if (err) return res.status(500).json({ message: "Error al modificar estudio" });
-      if (!result.affectedRows) return res.status(404).json({ message: "Estudio no encontrado" });
-      return res.json({ message: "Estudio modificado correctamente" });
+      if (err) return res.status(500).json({message:'Error al modificar estudio'});
+      if (!result.affectedRows) return res.status(404).json({message:'Estudio no encontrado'});
+      return res.json({message:'Estudio modificado correctamente'});
     });
-  actualizar();
 }
 
 async function cambiarEstado(req, res) {

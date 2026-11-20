@@ -1,3 +1,4 @@
+// Multer recibe los adjuntos; se validan y guardan fuera de la carpeta pública.
 const multer = require('multer');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -7,6 +8,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024, files: 1, fields: 5 },
 });
+// Nunca confiar solo en la extensión del archivo: comprobar también su contenido.
 function validar(file, tipos) {
   if (!file?.buffer || !file.size) throw new Error('Seleccioná un archivo');
   const ext = path.extname(file.originalname).toLowerCase();
@@ -18,6 +20,7 @@ function validar(file, tipos) {
   }
   return ext;
 }
+// El nombre aleatorio evita sobrescribir archivos con nombres repetidos.
 async function guardar(file, tipos) {
   const ext = validar(file, tipos);
   await fs.mkdir(BASE, { recursive: true });

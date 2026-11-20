@@ -1,3 +1,5 @@
+// Script manual: ejecutá «node scripts/crearAdmin.js» para crear un Super Admin.
+// No forma parte del servidor que atiende las peticiones React.
 // Inicialización LOCAL del Super Admin. No hay ruta HTTP para crear administradores.
 require("dotenv").config();
 const bcrypt = require("bcryptjs");

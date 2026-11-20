@@ -4,6 +4,8 @@ const path = require("node:path");
 const db = require("../config/db").promise();
 // DDL no es transaccional en MySQL. Hacer backup antes de ejecutarlo.
 function ident(s) { return '`' + String(s).replace(/`/g, '``') + '`'; }
+// Se ejecuta UNA SOLA VEZ o cuando reinstalamos: modifica estructura de MySQL, no vistas React.
+// La parte larga existe para conservar las claves foráneas de la tabla Casos.
 async function main() {
   const [cols] = await db.query(`SELECT IS_NULLABLE FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Casos' AND COLUMN_NAME = 'Estudio_ID'`);

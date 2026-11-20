@@ -14,16 +14,19 @@ function ProDetalleCaso(){
   const soyAdmin=rol==='ADMIN_ESTUDIO'&&caso?.Estudio_ID===estudioId;
   const soyResponsable=caso?.Responsable_ID===usuario.Usuario_ID;
   const editable=soyAdmin||soyResponsable;
+  // Carga el expediente y sus tres listados: avances, documentos y colaboradores.
   function cargar(){api(`/casos/${id}`).then(c=>{setCaso(c);setTitulo(c.Titulo);setDescripcion(c.Descripcion||'');setEstado(c.Estado);setResponsable(String(c.Responsable_ID));}).catch(e=>setError(e.message));
     api(`/casos/${id}/avances`).then(setAvances).catch(e=>setError(e.message));
     api(`/casos/${id}/documentos`).then(setDocumentos).catch(e=>setError(e.message));
     api(`/casos/${id}/abogados`).then(setColaboradores).catch(e=>setError(e.message));}
   useEffect(()=>{setError('');cargar();},[id]);
   useEffect(()=>{if(caso?.Estudio_ID)api(`/profesional/estudios/${caso.Estudio_ID}/profesionales`).then(setIntegrantes).catch(e=>setError(e.message));else setIntegrantes([]);},[caso?.Estudio_ID]);
+  // Centraliza el manejo de errores y la recarga después de cada cambio.
   async function ejecutar(accion){setOcupado(true);setError('');try{await accion();cargar();}catch(e){setError(e.message);}finally{setOcupado(false);}}
   async function guardarCaso(e){e.preventDefault();await ejecutar(async()=>{await enviarJSON('PUT',`/casos/${id}`,{Titulo:titulo,Descripcion:descripcion,Estado:estado,Responsable_ID:Number(responsable)});await mostrarAlerta('Expediente actualizado');});}
   async function borrarCaso(){const r=await confirmarAccion('Se eliminarán también todos los avances y documentos de este caso.',{peligro:true,confirmar:'Eliminar definitivamente'});if(!r.isConfirmed)return;
     await ejecutar(async()=>{await api(`/casos/${id}`,{method:'DELETE'});await mostrarAlerta('Expediente eliminado');window.location.assign('/profesional/casos');});}
+  // El avance empieza siendo interno; publicar es otra acción con permiso.
   async function registrarAvance(e){e.preventDefault();await ejecutar(async()=>{await enviarJSON('POST',`/casos/${id}/avances`,{Titulo:avanceTitulo,Descripcion:avanceDescripcion});setAvanceTitulo('');setAvanceDescripcion('');await mostrarAlerta('Avance interno registrado');});}
   async function publicar(a){const r=await confirmarAccion('El cliente podrá ver este avance.');if(!r.isConfirmed)return;
     await ejecutar(async()=>{await api(`/casos/${id}/avances/${a.Avance_ID}/publicar`,{method:'PATCH'});await mostrarAlerta('Avance publicado');});}

@@ -36,7 +36,7 @@ function ProClientes() {
       {!clientes.length&&<p>Aún no hay clientes vinculados.</p>}
       {clientes.map(c=><div className="list-row" key={c.Usuario_ID}><div><strong>{c.Nombre} {c.Apellido}</strong><small>{c.Email} · #{c.Usuario_ID}</small></div>
         <div className="actions"><span className={`estado estado--${c.Estado}`}>{c.Estado}</span>
-          {admin&&c.Estado==='PENDIENTE'&&c.Origen==='SOLICITUD'&&<><button disabled={ocupado} className="btn-small" onClick={()=>responder(c,'ACTIVO')}>Aceptar</button>
+          {admin&&espacio==='particular'&&c.Estado==='PENDIENTE'&&c.Origen==='SOLICITUD'&&<><button disabled={ocupado} className="btn-small" onClick={()=>responder(c,'ACTIVO')}>Aceptar</button>
             <button disabled={ocupado} className="btn-small btn-danger-outline" onClick={()=>responder(c,'RECHAZADO')}>Rechazar</button></>}</div></div>)}
     </section>
   </section>;

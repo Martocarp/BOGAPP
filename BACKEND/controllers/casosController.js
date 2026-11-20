@@ -3,6 +3,7 @@ const { guardar, borrar, descargar } = require('../helpers/archivos');
 const { borrarCasos } = require('./adminDelete');
 function error(res,e,msg='Error en expedientes') { console.error(msg,e.message); return res.status(500).json({message:msg}); }
 const estados = ['ABIERTO','EN_PROCESO','CERRADO'];
+// Lista únicamente los casos autorizados para este actor y su espacio de trabajo.
 async function listar(req,res) {
   const estudio = req.query.espacio === 'estudio';
   const uid = req.usuario.Usuario_ID;
@@ -42,6 +43,7 @@ async function buscar(req,res) {
     return res.json(rows[0]);
   } catch(e){return error(res,e);}
 }
+// CREAR CASO: primero confirma que el cliente esté vinculado y que el abogado tenga permiso.
 async function crear(req,res) {
   const { Estudio_ID=null, Cliente_ID, Titulo, Descripcion='', Responsable_ID } = req.body;
   const uid = req.usuario.Usuario_ID;
@@ -71,6 +73,7 @@ async function crear(req,res) {
     return res.status(201).json({message:'Expediente creado',Caso_ID:result.insertId});
   } catch(e){return error(res,e,'No se pudo crear el expediente. Revisá la migración y las relaciones');}
 }
+// Solo responsable o administrador puede modificar el expediente.
 async function editar(req,res) {
   const { Titulo, Descripcion='', Estado, Responsable_ID }=req.body;
   if(typeof Titulo!=='string'||!Titulo.trim()||Titulo.length>200||typeof Descripcion!=='string'||!estados.includes(Estado))
@@ -91,6 +94,7 @@ async function editar(req,res) {
     return res.json({message:'Expediente actualizado'});
   } catch(e){return error(res,e);}
 }
+// Borra expediente y archivos relacionados en una transacción.
 async function eliminar(req,res) {
   try {
     const ctx=await contextoCaso(req.params.id,req.usuario);
@@ -139,6 +143,7 @@ async function quitarAbogado(req,res) {
     return res.json({message:'Colaborador removido'});
   } catch(e){return error(res,e);}
 }
+// El cliente recibe solamente avances publicados; el abogado ve también borradores.
 async function avances(req,res) {
   try {
     const ctx=await contextoCaso(req.params.id,req.usuario);
@@ -183,6 +188,7 @@ async function quitarAvance(req,res) {
     return res.json({message:'Avance eliminado'});
   } catch(e){return error(res,e);}
 }
+// Documentos internos NO aparecen para el cliente.
 async function documentos(req,res) {
   try {
     const ctx=await contextoCaso(req.params.id,req.usuario);
@@ -192,6 +198,7 @@ async function documentos(req,res) {
     return res.json(rows);
   } catch(e){return error(res,e);}
 }
+// Multer deja el archivo en req.file; guardar() valida PDF/XLSX y lo almacena privado.
 async function subirDocumento(req,res) {
   let nombre;
   try {

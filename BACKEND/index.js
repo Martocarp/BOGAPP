@@ -9,6 +9,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32 || process.env
   process.exit(1);
 }
 
+// 1) Configuración común: JSON, CORS para React y cookies de sesión.
 const app = express();
 const PORT = Number(process.env.PORT) || 8000;
 app.use(express.json({ limit: "100kb" }));
@@ -26,6 +27,7 @@ app.get("/test", function (req, res) {
   });
 });
 
+// 2) Cada ruta recibe una parte de la API. La lógica queda en controllers/.
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/users", require("./routes/usuariosRoutes"));
 app.use("/estudios", require("./routes/estudiosRoutes"));
@@ -36,6 +38,7 @@ app.use("/casos", require("./routes/casosRoutes"));
 app.use("/vinculos", require("./routes/vinculosRoutes"));
 app.use("/", require("./routes/listadosRoutes"));
 
+// 3) Errores generales: nunca enviamos trazas del servidor al navegador.
 app.use(function (req, res) { res.status(404).json({ message: "Ruta inexistente" }); });
 app.use(function (err, req, res, next) {
   console.error("Error Express:", err.message);

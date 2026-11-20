@@ -1,8 +1,5 @@
-const fs = require('node:fs/promises');
 const { db, estudioDe, intId } = require('../helpers/permisos');
 const { guardar, borrar, descargar } = require('../helpers/archivos');
-const { autenticar, permitirRoles } = require('../middlewares/authMiddleware');
-const dbCb = require('../config/db');
 function error(res, e, message = 'Error al consultar MySQL') {
   console.error(message, e.message); return res.status(500).json({ message });
 }
@@ -10,6 +7,7 @@ async function especializaciones(req, res) {
   try { const [rows] = await db.query('SELECT * FROM Especializaciones ORDER BY Nombre'); return res.json(rows); }
   catch (e) { return error(res, e, 'Ejecutá primero la migración de profesionales'); }
 }
+// Devuelve la ficha del profesional autenticado (el ID viene de la cookie, no de React).
 async function perfil(req, res) {
   try {
     const [rows] = await db.query(`SELECT u.Usuario_ID, u.Nombre, u.Apellido, u.Email, u.Matricula,
@@ -20,6 +18,7 @@ async function perfil(req, res) {
     return res.json({ ...rows[0], especializaciones: esp.map(x => x.Especializacion_ID) });
   } catch (e) { return error(res, e); }
 }
+// Guarda biografía, matrícula y lista de especializaciones seleccionadas.
 async function editarPerfil(req, res) {
   const { Biografia = '', Matricula = '', especializaciones = [], Cv_Visible = false } = req.body;
   if (typeof Biografia !== 'string' || Biografia.length > 2000 || typeof Matricula !== 'string' || Matricula.length > 50 ||
@@ -40,6 +39,7 @@ async function editarPerfil(req, res) {
   } catch (e) { await conn.rollback(); return error(res, e, 'No se pudo actualizar el perfil'); }
   finally { conn.release(); }
 }
+// CV privado en el servidor: la base guarda solo el nombre y la ruta interna.
 async function subirCv(req, res) {
   if (!req.file) return res.status(400).json({ message: 'Seleccioná un PDF para el CV' });
   let nuevo;
@@ -68,6 +68,7 @@ async function borrarCv(req, res) {
     return res.json({ message: 'CV eliminado' });
   } catch(e) { return error(res,e); }
 }
+// El espacio activo determina qué clientes puede consultar el abogado.
 async function clientes(req, res) {
   const estudioId = intId(req.query.estudioId);
   try {
@@ -128,6 +129,7 @@ async function miembros(req, res) {
     return res.json(rows);
   } catch(e) { return error(res,e); }
 }
+// Estadísticas para Recharts: CHARTS GENERAL o RANGOS de fechas.
 async function dashboard(req, res) {
   const estudio = req.query.espacio === 'estudio';
   const id = req.usuario.Usuario_ID;

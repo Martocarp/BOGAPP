@@ -3,6 +3,8 @@ const c=require('../controllers/vinculosController');
 const {autenticar,permitirRoles}=require('../middlewares/authMiddleware');
 router.use(autenticar);
 router.get('/mis',permitirRoles('CLIENTE'),c.mis);
+router.get('/profesionales',permitirRoles('CLIENTE'),c.directorioProfesionales);
+router.get('/profesionales/:id/cv',permitirRoles('CLIENTE'),c.cvPublico);
 router.post('/solicitar-estudio',permitirRoles('CLIENTE'),c.pedirEstudio);
 router.post('/solicitar-profesional',permitirRoles('CLIENTE'),c.pedirProfesional);
 router.patch('/cliente/estudios/:estudioId',permitirRoles('CLIENTE'),c.responderEstudioComoCliente);

@@ -1,5 +1,7 @@
 const db = require('../config/db').promise();
+// Convierte un ID recibido por URL o formulario a entero válido.
 const intId = value => Number.isSafeInteger(Number(value)) && Number(value) > 0 ? Number(value) : null;
+// Comprueba el rol real del profesional en un estudio activo.
 async function estudioDe(profId, estudioId) {
   if (!intId(estudioId)) return null;
   const [rows] = await db.query(`SELECT pe.Rol_Estudio FROM Profesionales_Estudios pe
@@ -7,6 +9,8 @@ async function estudioDe(profId, estudioId) {
     WHERE pe.Usuario_ID = ? AND pe.Estudio_ID = ? AND pe.Estado = 'ACTIVO' AND e.Estado = 'APROBADO'`, [profId, estudioId]);
   return rows[0]?.Rol_Estudio || null;
 }
+// Punto central de seguridad: verifica si este usuario puede ver/editar ESTE caso.
+// Primero carga el caso, después comprueba cliente, abogado independiente o estudio.
 async function contextoCaso(casoId, usuario) {
   const [rows] = await db.query('SELECT * FROM Casos WHERE Caso_ID = ?', [casoId]);
   const caso = rows[0];

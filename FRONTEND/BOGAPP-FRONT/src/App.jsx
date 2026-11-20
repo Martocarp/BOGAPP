@@ -1,7 +1,7 @@
 import {
   BrowserRouter,
   Routes,
-  Route as RUTA,
+  Route,
   NavLink,
   Outlet,
   Navigate,
@@ -9,6 +9,7 @@ import {
 import AuthProvider from "./context/AuthProvider";
 import RutaPrivada from "./Components/RutaPrivada";
 import Salir from "./Components/Salir";
+import CambiarClave from "./Components/CambiarClave";
 import Home from "./pages/Home";
 import Home_p from "./pages/Home_p";
 import ProDashboard from "./pages/profesional/ProDashboard";
@@ -51,6 +52,7 @@ function LayoutAdmin() {
           <NavLink to="/admin/solicitudes">◷ &nbsp; Solicitudes</NavLink>
           <NavLink to="/admin/usuarios">♙ &nbsp; Usuarios</NavLink>
           <NavLink to="/admin/limpieza">♻ &nbsp; Limpieza</NavLink>
+          <NavLink to="/admin/seguridad">♙ &nbsp; Mi contraseña</NavLink>
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-profile">
@@ -73,15 +75,16 @@ function LayoutAdmin() {
     </div>
   );
 }
+// Cada tipo de cuenta tiene su ruta principal. RutaPrivada comprueba la sesión.
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <RUTA path="/login" element={<Login />} />
-          <RUTA path="/register" element={<Create_c />} />
-          <RUTA path="/register/profesional" element={<Create_p />} />
-          <RUTA
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Create_c />} />
+          <Route path="/register/profesional" element={<Create_p />} />
+          <Route
             path="/"
             element={
               <RutaPrivada rol="ADMIN_BOGAPP">
@@ -89,23 +92,24 @@ function App() {
               </RutaPrivada>
             }
           >
-            <RUTA index element={<Home />} />
-            <RUTA path="admin/estudios" element={<Estudios_d />} />
-            <RUTA path="admin/solicitudes" element={<Check />} />
-            <RUTA path="admin/usuarios" element={<UsuariosAdmin />} />
-            <RUTA path="admin/limpieza" element={<EliminarEstudios />} />
-          </RUTA>
-          <RUTA path="/profesional" element={<RutaPrivada rol="PROFESIONAL"><Home_p /></RutaPrivada>}>
-            <RUTA index element={<ProDashboard />} />
-            <RUTA path="estudios" element={<ProEstudios />} />
-            <RUTA path="clientes" element={<ProClientes />} />
-            <RUTA path="casos" element={<ProCasos />} />
-            <RUTA path="casos/:id" element={<ProDetalleCaso />} />
-            <RUTA path="integrantes" element={<ProIntegrantes />} />
-            <RUTA path="configuracion" element={<ProConfiguracion />} />
-            <RUTA path="perfil" element={<ProPerfil />} />
-          </RUTA>
-          <RUTA
+            <Route index element={<Home />} />
+            <Route path="admin/estudios" element={<Estudios_d />} />
+            <Route path="admin/solicitudes" element={<Check />} />
+            <Route path="admin/usuarios" element={<UsuariosAdmin />} />
+            <Route path="admin/limpieza" element={<EliminarEstudios />} />
+            <Route path="admin/seguridad" element={<CambiarClave />} />
+          </Route>
+          <Route path="/profesional" element={<RutaPrivada rol="PROFESIONAL"><Home_p /></RutaPrivada>}>
+            <Route index element={<ProDashboard />} />
+            <Route path="estudios" element={<ProEstudios />} />
+            <Route path="clientes" element={<ProClientes />} />
+            <Route path="casos" element={<ProCasos />} />
+            <Route path="casos/:id" element={<ProDetalleCaso />} />
+            <Route path="integrantes" element={<ProIntegrantes />} />
+            <Route path="configuracion" element={<ProConfiguracion />} />
+            <Route path="perfil" element={<ProPerfil />} />
+          </Route>
+          <Route
             path="/cliente"
             element={
               <RutaPrivada rol="CLIENTE">
@@ -113,23 +117,20 @@ function App() {
               </RutaPrivada>
             }
           />
-          <RUTA
+          <Route
             path="/sin-permiso"
             element={
               <div className="page-wrap">
                 <h1>Acceso denegado</h1>
                 <p>No tenés permisos para ver esta pantalla.</p>
-                <NavigateHome />
+                <NavLink to="/login">Volver al login</NavLink>
               </div>
             }
           />
-          <RUTA path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
-}
-function NavigateHome() {
-  return <NavLink to="/login">Volver al login</NavLink>;
 }
 export default App;
