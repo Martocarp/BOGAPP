@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { enviarJSON } from "../api";
 
+
 function CrearEstudio({ onCreado }) {
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");

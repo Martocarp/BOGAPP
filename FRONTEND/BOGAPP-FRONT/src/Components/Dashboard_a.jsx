@@ -16,6 +16,7 @@ import { api } from "../api";
 import { Link } from "react-router-dom";
 import ExportarPDF from "./ExportarPDF";
 const colores = ["#c89e63", "#298263", "#bb6471"];
+
 function Dashboard_a() {
   const [tab, setTab] = useState("general");
   const [desde, setDesde] = useState("");
@@ -67,7 +68,7 @@ function Dashboard_a() {
         (new Date(e.Fecha_Creacion).toISOString().slice(0, 10) >=
           aplicado.desde &&
           new Date(e.Fecha_Creacion).toISOString().slice(0, 10) <=
-            aplicado.hasta),
+          aplicado.hasta),
     )
     .slice(0, 5);
   return (

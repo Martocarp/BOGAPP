@@ -925,3 +925,19 @@ form {
   .cliente-content { padding: 20px 12px; }
   .cliente-inicio .stats-grid { grid-template-columns: 1fr; }
 }
+
+/* Portal Cliente y estudios: estilos pequeños, compartidos y fáciles de ajustar. */
+.estudio-acordeon {
+  border: 1px solid #e0e7ef;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  background: #fff;
+}
+.estudio-acordeon .list-row { border-bottom: 0; }
+.estudio-acordeon-detalle { padding: 12px; background: #f4f7fa; border-radius: 8px; }
+.cliente-consulta { border-top: 1px solid #e1e7ed; padding: 16px 0; }
+.cliente-consulta small { color: #65798d; }
+.cliente-novedades .list-row { align-items: flex-start; }
+.cliente-novedades small { display: block; color: #65798d; margin-top: 5px; }
+.cliente-archivo { max-width: 100%; }

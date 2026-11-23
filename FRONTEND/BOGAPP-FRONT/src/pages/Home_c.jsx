@@ -1,22 +1,24 @@
 import { useEffect, useState } from 'react';
 import Salir from '../Components/Salir';
 import CambiarClave from '../Components/CambiarClave';
+import ClienteCasos from './cliente/ClienteCasos';
+import ClienteSolicitudes from './cliente/ClienteSolicitudes';
 import useAuth from '../context/useAuth';
 import { api, enviarJSON, descargarArchivo } from '../api';
 import { mostrarAlerta } from '../utils/alertas';
 
-// El menú del cliente usa el mismo diseño lateral que los otros roles.
-// Cada botón cambia la sección sin recargar la página.
+// Mismo menú lateral que los otros roles, con las secciones propias del cliente.
 const secciones = [
   ['inicio', 'Dashboard', '▦'],
   ['abogados', 'Buscar profesionales', '♙'],
   ['estudios', 'Buscar estudios', '▤'],
   ['vinculos', 'Mis vinculaciones', '◷'],
   ['casos', 'Mis expedientes', '▣'],
+  ['solicitudes', 'Nuevas consultas', '✉'],
   ['cuenta', 'Mi cuenta', '⚙']
 ];
 
-// El cliente solo consulta sus casos. Lo que puede ver se controla en Express, no en React.
+
 function Home_c() {
   const { usuario } = useAuth();
   const [seccion, setSeccion] = useState('inicio');
@@ -28,26 +30,29 @@ function Home_c() {
   const [estudios, setEstudios] = useState([]);
   const [vinculos, setVinculos] = useState({ estudios: [], profesionales: [] });
   const [casos, setCasos] = useState([]);
-  const [actual, setActual] = useState(null);
+  const [actividad, setActividad] = useState({ novedades: [], preguntasPendientes: 0 });
   const [perfil, setPerfil] = useState(null);
-  const [avances, setAvances] = useState([]);
-  const [documentos, setDocumentos] = useState([]);
   const [error, setError] = useState('');
   const [ocupado, setOcupado] = useState(false);
 
-  // Al abrir la página: catálogo de áreas jurídicas, dos directorios y datos propios.
+  // React pide datos a Express. La API protege cada respuesta según la sesión.
   function cargar() {
     Promise.all([
       api('/especializaciones'), api('/vinculos/profesionales'), api('/estudios'),
-      api('/vinculos/mis'), api('/casos')
-    ]).then(([areas, abogados, estudios, vinculos, casos]) => {
-      setCatalogo(areas); setProfesionales(abogados); setEstudios(estudios);
-      setVinculos(vinculos); setCasos(casos);
+      api('/vinculos/mis'), api('/casos'), api('/cliente/actividad')
+    ]).then(([areas, abogados, estudios, vinculos, casos, actividad]) => {
+      setCatalogo(areas);
+      setProfesionales(abogados);
+      setEstudios(estudios);
+      setVinculos(vinculos);
+      setCasos(casos);
+      setActividad(actividad);
     }).catch(e => setError(e.message));
   }
+
   useEffect(() => { cargar(); }, []);
 
-  // Un solo filtro sirve para profesionales y estudios. Las áreas llegan desde MySQL.
+  // Los botones de especialización filtran datos que llegan desde MySQL.
   const registros = seccion === 'abogados' ? profesionales : estudios;
   const resultados = registros.filter(x => {
     const nombre = seccion === 'abogados' ? `${x.Nombre} ${x.Apellido}` : x.Nombre;
@@ -57,19 +62,23 @@ function Home_c() {
   });
 
   async function vincular(tipo, id) {
-    setOcupado(true); setError('');
+    setOcupado(true);
+    setError('');
+
     try {
       const ruta = tipo === 'estudio' ? '/vinculos/solicitar-estudio' : '/vinculos/solicitar-profesional';
       const datos = tipo === 'estudio' ? { Estudio_ID: id } : { Profesional_ID: id };
-      const res = await enviarJSON('POST', ruta, datos);
-      await mostrarAlerta(res.message);
+      const respuesta = await enviarJSON('POST', ruta, datos);
+      await mostrarAlerta(respuesta.message);
       cargar();
     } catch (e) { setError(e.message); }
     finally { setOcupado(false); }
   }
 
   async function responder(tipo, id, Estado) {
-    setOcupado(true); setError('');
+    setOcupado(true);
+    setError('');
+
     try {
       const ruta = tipo === 'estudio' ? `/vinculos/cliente/estudios/${id}` : `/vinculos/cliente/profesionales/${id}`;
       await enviarJSON('PATCH', ruta, { Estado });
@@ -78,165 +87,194 @@ function Home_c() {
     finally { setOcupado(false); }
   }
 
-  async function abrirCaso(caso) {
-    setActual(caso); setError('');
-    try {
-      const [a, d] = await Promise.all([
-        api(`/casos/${caso.Caso_ID}/avances`), api(`/casos/${caso.Caso_ID}/documentos`)
-      ]);
-      setAvances(a); setDocumentos(d);
-    } catch (e) { setError(e.message); }
-  }
-
   async function descargar(ruta, nombre) {
     try { await descargarArchivo(ruta, nombre); }
     catch (e) { setError(e.message); }
   }
 
   function abrirSeccion(id) {
-    setSeccion(id); setTexto(''); setArea(''); setPerfil(null); setError('');
-    setMenuAbierto(false); // En celulares cerramos el menú después de elegir una opción.
+    setSeccion(id);
+    setTexto('');
+    setArea('');
+    setPerfil(null);
+    setError('');
+    setMenuAbierto(false);
+    if (id === 'inicio') cargar(); // Renovar novedades al volver al Dashboard.
   }
 
-  // Datos simples del Dashboard, reutilizando las consultas ya existentes.
   const todasLasVinculaciones = [...vinculos.estudios, ...vinculos.profesionales];
   const activos = todasLasVinculaciones.filter(v => v.Estado === 'ACTIVO').length;
   const invitaciones = todasLasVinculaciones.filter(v => v.Estado === 'PENDIENTE' && v.Origen === 'INVITACION').length;
   const tituloSeccion = secciones.find(([id]) => id === seccion)?.[1] || 'Mi portal';
 
-  return <div className="admin-layout cliente-layout">
-    <aside className="admin-sidebar cliente-sidebar">
-      <div className="sidebar-brand">
-        <div className="sidebar-symbol">⚖</div>
-        <div><h2>BOGAPP</h2><p>PORTAL CLIENTE</p></div>
-      </div>
-      {/* El botón despliega el menú en celulares. En escritorio queda visible. */}
-      <button type="button" className="cliente-menu-toggle" aria-expanded={menuAbierto}
-        aria-controls="cliente-navegacion" onClick={() => setMenuAbierto(!menuAbierto)}>
-        ☰ {menuAbierto ? 'Ocultar menú' : 'Mostrar menú'}
-      </button>
-      <span className="sidebar-label">NAVEGACIÓN</span>
-      <nav id="cliente-navegacion" className={`admin-nav cliente-nav ${menuAbierto ? 'cliente-nav--abierto' : ''}`}
-        aria-label="Secciones del portal cliente">
-        {secciones.map(([id, nombre, icono]) => <button key={id} type="button"
-          className={seccion === id ? 'seleccionado' : ''} aria-current={seccion === id ? 'page' : undefined}
-          onClick={() => abrirSeccion(id)}>{icono} &nbsp; {nombre}</button>)}
-      </nav>
-      <div className="sidebar-bottom">
-        <div className="sidebar-profile">
-          <div className="avatar">{usuario?.Nombre?.[0]?.toUpperCase() || 'C'}</div>
-          <div><b>{usuario?.Nombre} {usuario?.Apellido}</b><small>CLIENTE</small></div>
+  return (
+    <div className="admin-layout cliente-layout">
+      <aside className="admin-sidebar cliente-sidebar">
+        <div className="sidebar-brand">
+          <div className="sidebar-symbol">⚖</div>
+          <div><h2>BOGAPP</h2><p>PORTAL CLIENTE</p></div>
         </div>
-        <Salir />
-      </div>
-    </aside>
-    <main className="admin-content cliente-content">
-      <header className="section-head">
-        <div><span className="eyebrow">BOGAPP / PORTAL CLIENTE</span>
-          <h1>{seccion === 'inicio' ? `Hola, ${usuario?.Nombre || 'cliente'}` : tituloSeccion}</h1>
-          <p>{seccion === 'inicio' ? 'Buscá asesoramiento jurídico y consultá tus expedientes.' : 'Gestioná tu actividad en BOGAPP.'}</p>
-        </div>
-      </header>
-    {error && <p className="error-text" role="alert">{error}</p>}
 
-    {seccion === 'inicio' && <section className="cliente-inicio">
-      <div className="stats-grid">
-        <div className="stat-card"><span>Mis expedientes</span><strong>{casos.length}</strong></div>
-        <div className="stat-card"><span>Vinculaciones activas</span><strong>{activos}</strong></div>
-        <div className="stat-card"><span>Invitaciones pendientes</span><strong>{invitaciones}</strong></div>
-      </div>
-      <section className="panel-card">
-        <h2>¿Qué querés hacer?</h2>
-        <div className="actions">
-          <button type="button" onClick={() => abrirSeccion('abogados')}>Buscar profesionales</button>
-          <button type="button" onClick={() => abrirSeccion('estudios')}>Buscar estudios</button>
-          <button type="button" onClick={() => abrirSeccion('casos')}>Ver mis expedientes</button>
-          {invitaciones > 0 && <button type="button" onClick={() => abrirSeccion('vinculos')}>Responder invitaciones</button>}
-        </div>
-      </section>
-    </section>}
+        <button type="button" className="cliente-menu-toggle" aria-expanded={menuAbierto}
+          aria-controls="cliente-navegacion" onClick={() => setMenuAbierto(!menuAbierto)}>
+          ☰ {menuAbierto ? 'Ocultar menú' : 'Mostrar menú'}
+        </button>
+        <span className="sidebar-label">NAVEGACIÓN</span>
 
-    {(seccion === 'abogados' || seccion === 'estudios') && <section className="panel-card">
-      <h2>{seccion === 'abogados' ? 'Profesionales' : 'Estudios jurídicos'}</h2>
-      <p>Elegí un área jurídica o buscá por nombre.</p>
-      <input className="cliente-busqueda" value={texto} onChange={e => setTexto(e.target.value)}
-        placeholder="Buscar por nombre..." aria-label="Buscar por nombre" />
-      <div className="cliente-filtros" aria-label="Especializaciones">
-        <button type="button" className={!area ? 'seleccionado' : ''} onClick={() => setArea('')}>Todas</button>
-        {catalogo.map(x => <button type="button" key={x.Especializacion_ID}
-          className={area === String(x.Especializacion_ID) ? 'seleccionado' : ''}
-          onClick={() => setArea(String(x.Especializacion_ID))}>{x.Nombre}</button>)}
-      </div>
-      <p className="help-text">{resultados.length} resultados encontrados</p>
-      {resultados.map(x => {
-        const esAbogado = seccion === 'abogados';
-        const id = esAbogado ? x.Usuario_ID : x.Estudio_ID;
-        const nombre = esAbogado ? `${x.Nombre} ${x.Apellido}` : x.Nombre;
-        const vinculo = (esAbogado ? vinculos.profesionales : vinculos.estudios)
-          .find(v => (esAbogado ? v.Profesional_ID : v.Estudio_ID) === id);
-        return <div key={id} className="cliente-resultado">
-          <div><strong>{nombre}</strong><small>{x.Areas || 'Sin especializaciones informadas'}</small>
-            {esAbogado && x.Matricula && <small>Matrícula: {x.Matricula}</small>}
-            {!esAbogado && x.Direccion && <small>{x.Direccion}</small>}
-          </div>
-          <div className="actions">
-            {esAbogado && <button type="button" className="btn-small" onClick={() => setPerfil(perfil === id ? null : id)}>
-              {perfil === id ? 'Ocultar perfil' : 'Ver perfil'}
-            </button>}
-            <button type="button" disabled={ocupado || vinculo?.Estado === 'ACTIVO' || vinculo?.Estado === 'PENDIENTE'}
-              onClick={() => vincular(esAbogado ? 'profesional' : 'estudio', id)}>
-              {vinculo?.Estado === 'ACTIVO' ? 'Vinculado' : vinculo?.Estado === 'PENDIENTE' ? 'Pendiente' : esAbogado ? 'Solicitar vinculación' : 'Unirse'}
+        <nav id="cliente-navegacion" aria-label="Secciones del portal cliente"
+          className={`admin-nav cliente-nav ${menuAbierto ? 'cliente-nav--abierto' : ''}`}>
+          {secciones.map(([id, nombre, icono]) => (
+            <button key={id} type="button" className={seccion === id ? 'seleccionado' : ''}
+              aria-current={seccion === id ? 'page' : undefined} onClick={() => abrirSeccion(id)}>
+              {icono} &nbsp; {nombre}
             </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-bottom">
+          <div className="sidebar-profile">
+            <div className="avatar">{usuario?.Nombre?.[0]?.toUpperCase() || 'C'}</div>
+            <div><b>{usuario?.Nombre} {usuario?.Apellido}</b><small>CLIENTE</small></div>
           </div>
-          {esAbogado && perfil === id && <div className="cliente-perfil">
-            <p>{x.Biografia || 'Este profesional todavía no cargó una biografía.'}</p>
-            {!!x.Cv_Disponible && <button type="button" onClick={() => descargar(`/vinculos/profesionales/${id}/cv`, `CV_${nombre.replaceAll(' ', '_')}.pdf`)}>Descargar CV público</button>}
-          </div>}
-        </div>;
-      })}
-      {!resultados.length && <p>No se encontraron resultados. Probá otro filtro.</p>}
-    </section>}
+          <Salir />
+        </div>
+      </aside>
 
-    {seccion === 'vinculos' && <section className="panel-card">
-      <h2>Mis vinculaciones</h2>
-      {[
-        { titulo: 'Estudios', tipo: 'estudio', lista: vinculos.estudios, campo: 'Estudio_ID' },
-        { titulo: 'Profesionales particulares', tipo: 'profesional', lista: vinculos.profesionales, campo: 'Profesional_ID' }
-      ].map(grupo => <div key={grupo.tipo} className="pro-section-space">
-        <h3>{grupo.titulo}</h3>
-        {!grupo.lista.length && <p>No hay vinculaciones todavía.</p>}
-        {grupo.lista.map(v => <div className="list-row" key={v[grupo.campo]}>
-          <div><strong>{v.Nombre}</strong><small>{v.Estado} · {v.Origen}</small></div>
-          {v.Estado === 'PENDIENTE' && v.Origen === 'INVITACION' && <div className="actions">
-            <button disabled={ocupado} onClick={() => responder(grupo.tipo, v[grupo.campo], 'ACTIVO')}>Aceptar</button>
-            <button disabled={ocupado} className="btn-danger-outline" onClick={() => responder(grupo.tipo, v[grupo.campo], 'RECHAZADO')}>Rechazar</button>
-          </div>}
-        </div>)}
-      </div>)}
-    </section>}
+      <main className="admin-content cliente-content">
+        <header className="section-head">
+          <div>
+            <span className="eyebrow">BOGAPP / PORTAL CLIENTE</span>
+            <h1>{seccion === 'inicio' ? `Hola, ${usuario?.Nombre || 'cliente'}` : tituloSeccion}</h1>
+            <p>{seccion === 'inicio' ? 'Consultá tu actividad jurídica y tus acciones pendientes.' : 'Gestioná tu actividad en BOGAPP.'}</p>
+          </div>
+        </header>
+        {error && <p className="error-text" role="alert">{error}</p>}
 
-    {seccion === 'casos' && <section className="panel-card">
-      <h2>Mis expedientes</h2>
-      {!casos.length && <p>Aún no tenés expedientes.</p>}
-      {casos.map(c => <div className="list-row" key={c.Caso_ID}>
-        <div><strong>#{c.Caso_ID} · {c.Titulo}</strong><small>{c.Estado} · {c.Responsable_Nombre}</small></div>
-        <button onClick={() => abrirCaso(c)}>Ver seguimiento</button>
-      </div>)}
-      {actual && <div className="details-panel">
-        <h3>{actual.Titulo}</h3><p>{actual.Descripcion}</p>
-        <h3>Avances publicados</h3>
-        {!avances.length && <p>No hay avances publicados.</p>}
-        {avances.map(a => <div className="list-row" key={a.Avance_ID}><div><strong>{a.Titulo}</strong><p>{a.Descripcion}</p></div></div>)}
-        <h3>Documentos compartidos</h3>
-        {!documentos.length && <p>No hay documentos compartidos.</p>}
-        {documentos.map(d => <div className="list-row" key={d.Documento_ID}>
-          <strong>{d.Nombre_Archivo}</strong>
-          <button onClick={() => descargar(`/casos/${actual.Caso_ID}/documentos/${d.Documento_ID}/descargar`, d.Nombre_Archivo)}>Descargar</button>
-        </div>)}
-      </div>}
-    </section>}
-    {seccion === 'cuenta' && <CambiarClave />}
-    </main>
-  </div>;
+        {seccion === 'inicio' && (
+          <div className="cliente-inicio">
+            <div className="stats-grid">
+              <div className="stat-card"><span>Mis expedientes</span><strong>{casos.length}</strong></div>
+              <div className="stat-card"><span>Vínculos activos</span><strong>{activos}</strong></div>
+              <div className="stat-card"><span>Invitaciones pendientes</span><strong>{invitaciones}</strong></div>
+            </div>
+
+            <section className="panel-card cliente-novedades">
+              <h2>Actividad y pendientes</h2>
+              <p>Preguntas sin responder: <strong>{actividad.preguntasPendientes}</strong></p>
+              {invitaciones > 0 && <button onClick={() => abrirSeccion('vinculos')}>
+                Responder {invitaciones} invitación(es)
+              </button>}
+              <h3 className="pro-section-space">Últimas novedades publicadas</h3>
+              {!actividad.novedades.length && <p>No hay novedades recientes.</p>}
+              {actividad.novedades.map(n => (
+                <div className="list-row" key={n.Avance_ID}>
+                  <div><strong>{n.Titulo}</strong><small>{n.Caso_Titulo} · {new Date(n.Fecha_Publicacion).toLocaleDateString('es-AR')}</small></div>
+                  <button className="btn-small" onClick={() => abrirSeccion('casos')}>Ver mis expedientes</button>
+                </div>
+              ))}
+            </section>
+
+            <section className="panel-card">
+              <h2>Accesos rápidos</h2>
+              <div className="actions">
+                <button onClick={() => abrirSeccion('abogados')}>Buscar profesionales</button>
+                <button onClick={() => abrirSeccion('estudios')}>Buscar estudios</button>
+                <button onClick={() => abrirSeccion('casos')}>Mis expedientes</button>
+                <button onClick={() => abrirSeccion('solicitudes')}>Solicitar nuevo caso</button>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {(seccion === 'abogados' || seccion === 'estudios') && (
+          <section className="panel-card">
+            <h2>{seccion === 'abogados' ? 'Profesionales' : 'Estudios jurídicos'}</h2>
+            <p>Elegí un área jurídica o buscá por nombre.</p>
+            <input className="cliente-busqueda" value={texto} onChange={e => setTexto(e.target.value)}
+              placeholder="Buscar por nombre..." aria-label="Buscar por nombre" />
+
+            <div className="cliente-filtros" aria-label="Especializaciones">
+              <button type="button" className={!area ? 'seleccionado' : ''} onClick={() => setArea('')}>Todas</button>
+              {catalogo.map(x => (
+                <button type="button" key={x.Especializacion_ID}
+                  className={area === String(x.Especializacion_ID) ? 'seleccionado' : ''}
+                  onClick={() => setArea(String(x.Especializacion_ID))}>{x.Nombre}</button>
+              ))}
+            </div>
+
+            <p className="help-text">{resultados.length} resultados encontrados</p>
+            {resultados.map(x => {
+              const esAbogado = seccion === 'abogados';
+              const id = esAbogado ? x.Usuario_ID : x.Estudio_ID;
+              const nombre = esAbogado ? `${x.Nombre} ${x.Apellido}` : x.Nombre;
+              const vinculo = (esAbogado ? vinculos.profesionales : vinculos.estudios)
+                .find(v => (esAbogado ? v.Profesional_ID : v.Estudio_ID) === id);
+
+              return (
+                <div key={id} className="cliente-resultado">
+                  <div>
+                    <strong>{nombre}</strong>
+                    <small>{x.Areas || 'Sin especializaciones informadas'}</small>
+                    {esAbogado && x.Matricula && <small>Matrícula: {x.Matricula}</small>}
+                    {!esAbogado && x.Direccion && <small>{x.Direccion}</small>}
+                  </div>
+                  <div className="actions">
+                    {esAbogado && <button className="btn-small" onClick={() => setPerfil(perfil === id ? null : id)}>
+                      {perfil === id ? 'Ocultar perfil' : 'Ver perfil'}
+                    </button>}
+                    <button disabled={ocupado || ['ACTIVO', 'PENDIENTE'].includes(vinculo?.Estado)}
+                      onClick={() => vincular(esAbogado ? 'profesional' : 'estudio', id)}>
+                      {vinculo?.Estado === 'ACTIVO' ? 'Vinculado' : vinculo?.Estado === 'PENDIENTE'
+                        ? 'Pendiente' : esAbogado ? 'Solicitar vinculación' : 'Unirse'}
+                    </button>
+                  </div>
+                  {esAbogado && perfil === id && (
+                    <div className="cliente-perfil">
+                      <p>{x.Biografia || 'Este profesional todavía no cargó una biografía.'}</p>
+                      {!!x.Cv_Disponible && <button onClick={() => descargar(`/vinculos/profesionales/${id}/cv`, `CV_${nombre.replaceAll(' ', '_')}.pdf`)}>
+                        Descargar CV público
+                      </button>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {!resultados.length && <p>No se encontraron resultados. Probá otro filtro.</p>}
+          </section>
+        )}
+
+        {seccion === 'vinculos' && (
+          <section className="panel-card">
+            <h2>Mis vinculaciones</h2>
+            {[
+              { titulo: 'Estudios', tipo: 'estudio', lista: vinculos.estudios, campo: 'Estudio_ID' },
+              { titulo: 'Profesionales particulares', tipo: 'profesional', lista: vinculos.profesionales, campo: 'Profesional_ID' }
+            ].map(grupo => (
+              <div key={grupo.tipo} className="pro-section-space">
+                <h3>{grupo.titulo}</h3>
+                {!grupo.lista.length && <p>No hay vinculaciones todavía.</p>}
+                {grupo.lista.map(v => (
+                  <div className="list-row" key={v[grupo.campo]}>
+                    <div><strong>{v.Nombre}</strong><small>{v.Estado} · {v.Origen}</small></div>
+                    {v.Estado === 'PENDIENTE' && v.Origen === 'INVITACION' && (
+                      <div className="actions">
+                        <button disabled={ocupado} onClick={() => responder(grupo.tipo, v[grupo.campo], 'ACTIVO')}>Aceptar</button>
+                        <button disabled={ocupado} className="btn-danger-outline" onClick={() => responder(grupo.tipo, v[grupo.campo], 'RECHAZADO')}>Rechazar</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </section>
+        )}
+
+        {seccion === 'casos' && <ClienteCasos casos={casos} usuarioId={usuario?.Usuario_ID} alActualizar={cargar} />}
+        {seccion === 'solicitudes' && <ClienteSolicitudes vinculos={vinculos} />}
+        {seccion === 'cuenta' && <CambiarClave />}
+      </main>
+    </div>
+  );
 }
+
 export default Home_c;

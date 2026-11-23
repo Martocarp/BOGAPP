@@ -9,6 +9,7 @@ const upload = multer({
   limits: { fileSize: 8 * 1024 * 1024, files: 1, fields: 5 },
 });
 // Nunca confiar solo en la extensión del archivo: comprobar también su contenido.
+
 function validar(file, tipos) {
   if (!file?.buffer || !file.size) throw new Error('Seleccioná un archivo');
   const ext = path.extname(file.originalname).toLowerCase();
@@ -21,6 +22,7 @@ function validar(file, tipos) {
   return ext;
 }
 // El nombre aleatorio evita sobrescribir archivos con nombres repetidos.
+
 async function guardar(file, tipos) {
   const ext = validar(file, tipos);
   await fs.mkdir(BASE, { recursive: true });
@@ -28,11 +30,14 @@ async function guardar(file, tipos) {
   await fs.writeFile(path.join(BASE, nombre), file.buffer, { flag: 'wx' });
   return nombre;
 }
+
 function ruta(nombre) {
   if (!/^[a-f0-9-]{36}\.(pdf|xlsx)$/.test(nombre || '')) throw new Error('Archivo inválido');
   return path.join(BASE, nombre);
 }
+
 async function borrar(nombre) { if (nombre) await fs.unlink(ruta(nombre)).catch(e => { if (e.code !== 'ENOENT') console.error('No se pudo borrar archivo:', e.message); }); }
+
 function descargar(res, nombre, original) {
   const archivo = ruta(nombre);
   res.download(archivo, path.basename(original || 'documento.pdf'), err => {

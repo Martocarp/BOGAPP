@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, enviarJSON } from "../api";
 import { mostrarAlerta, confirmarAccion } from "../utils/alertas";
 
+
 function Estudios_d() {
   const [estudios, setEstudios] = useState([]);
   const [profesionales, setProfesionales] = useState([]);
@@ -20,7 +21,7 @@ function Estudios_d() {
   }
   useEffect(() => {
     cargar();
-    api("/profesionales").then(setCatalogo).catch(() => {});
+    api("/profesionales").then(setCatalogo).catch(() => { });
   }, []);
 
   const filtrados = useMemo(() => estudios.filter(e =>
@@ -116,9 +117,9 @@ function Estudios_d() {
           <span><b>Teléfono:</b> {seleccionado.Telefono || "—"}</span></div>
         <div className="actions"><button onClick={() => setEditar(v => !v)}>{editar ? "Cancelar edición" : "Editar estudio"}</button></div>
         {editar && <form className="form-grid" onSubmit={guardar}>
-          <label>Nombre<input value={form.Nombre} onChange={e => setForm(v => ({...v, Nombre: e.target.value}))} required /></label>
-          <label>Dirección<input value={form.Direccion} onChange={e => setForm(v => ({...v, Direccion: e.target.value}))} /></label>
-          <label>Teléfono<input value={form.Telefono} onChange={e => setForm(v => ({...v, Telefono: e.target.value}))} /></label>
+          <label>Nombre<input value={form.Nombre} onChange={e => setForm(v => ({ ...v, Nombre: e.target.value }))} required /></label>
+          <label>Dirección<input value={form.Direccion} onChange={e => setForm(v => ({ ...v, Direccion: e.target.value }))} /></label>
+          <label>Teléfono<input value={form.Telefono} onChange={e => setForm(v => ({ ...v, Telefono: e.target.value }))} /></label>
           <button disabled={guardando}>Guardar cambios</button>
         </form>}
         <h3>Profesionales del estudio ({profesionales.length})</h3>
@@ -128,11 +129,11 @@ function Estudios_d() {
           <button className="btn-small btn-danger-outline" disabled={guardando} onClick={() => quitar(p.Usuario_ID)}>Desvincular</button>
         </div>)}
         {seleccionado.Estado === "APROBADO" && <form className="inline-form" onSubmit={vincular}>
-          <label>Agregar profesional<select value={nuevo.Usuario_ID} onChange={e => setNuevo(v => ({...v, Usuario_ID: e.target.value}))} required>
+          <label>Agregar profesional<select value={nuevo.Usuario_ID} onChange={e => setNuevo(v => ({ ...v, Usuario_ID: e.target.value }))} required>
             <option value="">Seleccionar profesional</option>
             {libres.map(p => <option key={p.Usuario_ID} value={p.Usuario_ID}>{p.Nombre} {p.Apellido} (#{p.Usuario_ID})</option>)}
           </select></label>
-          <label>Rol<select value={nuevo.Rol_Estudio} onChange={e => setNuevo(v => ({...v, Rol_Estudio: e.target.value}))}>
+          <label>Rol<select value={nuevo.Rol_Estudio} onChange={e => setNuevo(v => ({ ...v, Rol_Estudio: e.target.value }))}>
             <option value="ABOGADO">ABOGADO</option><option value="ADMIN_ESTUDIO">ADMIN_ESTUDIO</option>
           </select></label>
           <button type="submit" disabled={guardando || !nuevo.Usuario_ID}>Vincular</button>

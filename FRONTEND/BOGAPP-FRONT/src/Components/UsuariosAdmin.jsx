@@ -3,6 +3,7 @@ import { api, enviarJSON } from "../api";
 import useAuth from "../context/useAuth";
 import { mostrarAlerta, confirmarAccion } from "../utils/alertas";
 
+
 function UsuariosAdmin() {
   const { usuario } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
@@ -18,13 +19,17 @@ function UsuariosAdmin() {
     `${u.Nombre} ${u.Apellido} ${u.Email} ${u.Tipo_Cuenta} ${u.Usuario_ID}`.toLowerCase().includes(busqueda.toLowerCase())
   ), [usuarios, busqueda]);
   function seleccionar(u) {
-    setSeleccionado(u); setForm({ Nombre: u.Nombre, Apellido: u.Apellido, Email: u.Email,
-      Tipo_Cuenta: u.Tipo_Cuenta, Matricula: u.Matricula || "" }); setError(""); setMensaje("");
+    setSeleccionado(u); setForm({
+      Nombre: u.Nombre, Apellido: u.Apellido, Email: u.Email,
+      Tipo_Cuenta: u.Tipo_Cuenta, Matricula: u.Matricula || ""
+    }); setError(""); setMensaje("");
   }
   async function guardar(e) {
     e.preventDefault(); setGuardando(true); setError("");
-    try { await enviarJSON("PUT", `/users/${seleccionado.Usuario_ID}`, form);
-      setMensaje("Usuario actualizado"); mostrarAlerta("Usuario actualizado correctamente"); setSeleccionado(null); await cargar(); }
+    try {
+      await enviarJSON("PUT", `/users/${seleccionado.Usuario_ID}`, form);
+      setMensaje("Usuario actualizado"); mostrarAlerta("Usuario actualizado correctamente"); setSeleccionado(null); await cargar();
+    }
     catch (err) { setError(err.message); }
     finally { setGuardando(false); }
   }
@@ -43,8 +48,10 @@ function UsuariosAdmin() {
     });
     if (!segunda.isConfirmed) return;
     setGuardando(true); setError("");
-    try { await api(`/users/${u.Usuario_ID}`, { method: "DELETE" });
-      setSeleccionado(null); setMensaje("Usuario eliminado"); mostrarAlerta("Usuario eliminado correctamente"); await cargar(); }
+    try {
+      await api(`/users/${u.Usuario_ID}`, { method: "DELETE" });
+      setSeleccionado(null); setMensaje("Usuario eliminado"); mostrarAlerta("Usuario eliminado correctamente"); await cargar();
+    }
     catch (err) { setError(err.message); }
     finally { setGuardando(false); }
   }
@@ -67,10 +74,10 @@ function UsuariosAdmin() {
       </table>{!filtrados.length && <div className="empty-state">No hay coincidencias.</div>}</div>
       {seleccionado && form && <form className="details-panel form-grid" onSubmit={guardar}>
         <div className="section-head"><h2>Editar usuario #{seleccionado.Usuario_ID}</h2><button type="button" className="btn-quiet" onClick={() => setSeleccionado(null)}>Cerrar ×</button></div>
-        <label>Nombre<input required value={form.Nombre} onChange={e => setForm(v => ({...v, Nombre: e.target.value}))} /></label>
-        <label>Apellido<input required value={form.Apellido} onChange={e => setForm(v => ({...v, Apellido: e.target.value}))} /></label>
-        <label>Email<input type="email" required value={form.Email} onChange={e => setForm(v => ({...v, Email: e.target.value}))} /></label>
-        {form.Tipo_Cuenta === "PROFESIONAL" && <label>Matrícula<input value={form.Matricula} onChange={e => setForm(v => ({...v, Matricula: e.target.value}))} /></label>}
+        <label>Nombre<input required value={form.Nombre} onChange={e => setForm(v => ({ ...v, Nombre: e.target.value }))} /></label>
+        <label>Apellido<input required value={form.Apellido} onChange={e => setForm(v => ({ ...v, Apellido: e.target.value }))} /></label>
+        <label>Email<input type="email" required value={form.Email} onChange={e => setForm(v => ({ ...v, Email: e.target.value }))} /></label>
+        {form.Tipo_Cuenta === "PROFESIONAL" && <label>Matrícula<input value={form.Matricula} onChange={e => setForm(v => ({ ...v, Matricula: e.target.value }))} /></label>}
         <p>Tipo de cuenta: <b>{form.Tipo_Cuenta}</b> (fijo)</p>
         <button disabled={guardando}>Guardar</button>
       </form>}

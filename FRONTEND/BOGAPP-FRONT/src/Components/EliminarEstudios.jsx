@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { mostrarAlerta, confirmarAccion } from "../utils/alertas";
 
+
 function EliminarEstudios() {
   const [estudios, setEstudios] = useState([]);
   const [procesando, setProcesando] = useState(false);

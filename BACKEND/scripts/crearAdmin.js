@@ -5,6 +5,7 @@ require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const db = require("../config/db");
 
+
 async function main() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD;

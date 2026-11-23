@@ -5,6 +5,7 @@ const { borrar: borrarArchivo } = require("../helpers/archivos");
 // Admin ve TODOS, profesional solo propios/vinculados, cliente solo aprobados.
 // CLIENTE: solo ve estudios aprobados, sus datos públicos y áreas jurídicas.
 // ADMIN y PROFESIONAL mantienen el listado original que usan sus paneles.
+
 function listar(req, res) {
   const rol = req.usuario.Tipo_Cuenta;
   let sql, params = [];
@@ -28,8 +29,9 @@ function listar(req, res) {
   }
   sql += ' ORDER BY e.Fecha_Creacion DESC, e.Estudio_ID DESC';
   db.query(sql, params, (err, rows) => err
-    ? res.status(500).json({message:'Error al obtener estudios'}) : res.json(rows));
+    ? res.status(500).json({ message: 'Error al obtener estudios' }) : res.json(rows));
 }
+
 
 function mis(req, res) {
   const id = req.usuario.Usuario_ID;
@@ -39,6 +41,7 @@ function mis(req, res) {
     ORDER BY e.Fecha_Creacion DESC, e.Estudio_ID DESC`, [id], (err, rows) =>
     err ? res.status(500).json({ message: "Error al obtener mis estudios" }) : res.json(rows));
 }
+
 
 function buscar(req, res) {
   const rol = req.usuario.Tipo_Cuenta;
@@ -57,6 +60,7 @@ function buscar(req, res) {
   });
 }
 
+
 function crear(req, res) {
   const { Nombre, Direccion, Telefono } = req.body;
   if (typeof Nombre !== "string" || !Nombre.trim()) {
@@ -70,17 +74,19 @@ function crear(req, res) {
     });
 }
 
+
 function editar(req, res) {
   const { Nombre, Direccion, Telefono } = req.body;
   if (typeof Nombre !== "string" || !Nombre.trim()) return res.status(400).json({ message: "El nombre es obligatorio" });
   db.query('UPDATE Estudios SET Nombre=?, Direccion=?, Telefono=? WHERE Estudio_ID=?',
     [Nombre.trim(), Direccion || null, Telefono || null, req.params.id],
     (err, result) => {
-      if (err) return res.status(500).json({message:'Error al modificar estudio'});
-      if (!result.affectedRows) return res.status(404).json({message:'Estudio no encontrado'});
-      return res.json({message:'Estudio modificado correctamente'});
+      if (err) return res.status(500).json({ message: 'Error al modificar estudio' });
+      if (!result.affectedRows) return res.status(404).json({ message: 'Estudio no encontrado' });
+      return res.json({ message: 'Estudio modificado correctamente' });
     });
 }
+
 
 async function cambiarEstado(req, res) {
   const { Estado } = req.body;
@@ -114,6 +120,7 @@ async function cambiarEstado(req, res) {
   } finally { conn.release(); }
 }
 
+
 async function eliminar(req, res) {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id < 1) return res.status(400).json({ message: "ID inválido" });
@@ -136,6 +143,7 @@ async function eliminar(req, res) {
   } finally { conn.release(); }
 }
 
+
 function profesionales(req, res) {
   db.query(`SELECT u.Usuario_ID, u.Nombre, u.Apellido, u.Email, u.Matricula,
       pe.Rol_Estudio, pe.Estado, pe.Origen, pe.Fecha_Solicitud
@@ -144,6 +152,7 @@ function profesionales(req, res) {
     WHERE pe.Estudio_ID = ? ORDER BY pe.Rol_Estudio, u.Apellido, u.Nombre`,
     [req.params.id], (err, rows) => err ? res.status(500).json({ message: "Error al listar profesionales" }) : res.json(rows));
 }
+
 function agregarProfesional(req, res) {
   const { Usuario_ID, Rol_Estudio } = req.body;
   if (!Number.isInteger(Number(Usuario_ID)) || !["ABOGADO", "ADMIN_ESTUDIO"].includes(Rol_Estudio)) {
@@ -165,6 +174,7 @@ function agregarProfesional(req, res) {
     });
   });
 }
+
 function quitarProfesional(req, res) {
   const estudioId = Number(req.params.id), usuarioId = Number(req.params.usuarioId);
   // No dejar un estudio aprobado sin ningún ADMIN_ESTUDIO activo.

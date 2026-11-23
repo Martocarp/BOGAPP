@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, enviarJSON } from "../api";
 import { mostrarAlerta, confirmarAccion } from "../utils/alertas";
 
+
 function Check() {
   const [estudios, setEstudios] = useState([]);
   const [error, setError] = useState("");

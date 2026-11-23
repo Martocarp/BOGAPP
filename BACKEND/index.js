@@ -36,6 +36,7 @@ app.use("/profesional", require("./routes/profesionalRoutes"));
 app.use("/especializaciones", require("./routes/especializacionesRoutes"));
 app.use("/casos", require("./routes/casosRoutes"));
 app.use("/vinculos", require("./routes/vinculosRoutes"));
+app.use("/cliente", require("./routes/clienteRoutes"));
 app.use("/", require("./routes/listadosRoutes"));
 
 // 3) Errores generales: nunca enviamos trazas del servidor al navegador.

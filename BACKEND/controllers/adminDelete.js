@@ -1,5 +1,6 @@
 // Eliminación explícita en orden por claves foráneas. Todo ocurre en UNA transacción.
 // Eliminar un usuario vinculado también elimina sus expedientes y sus estudios creados.
+
 async function borrarCasos(db, ids) {
   if (!ids.length) return;
   await db.query("DELETE FROM Documentos WHERE Caso_ID IN (?)", [ids]);
@@ -8,10 +9,11 @@ async function borrarCasos(db, ids) {
   await db.query("DELETE FROM Casos WHERE Caso_ID IN (?)", [ids]);
 }
 
+
 async function borrarEstudios(db, ids) {
   if (!ids.length) return;
   const [casos] = await db.query("SELECT Caso_ID FROM Casos WHERE Estudio_ID IN (?)", [ids]);
-  const caseIds = casos.map(c=>c.Caso_ID);
+  const caseIds = casos.map(c => c.Caso_ID);
   const [docs] = caseIds.length ? await db.query("SELECT Ruta_Archivo FROM Documentos WHERE Caso_ID IN (?)", [caseIds]) : [[]];
   await borrarCasos(db, caseIds);
   // Tabla opcional añadida durante la etapa de especializaciones.
@@ -23,8 +25,9 @@ async function borrarEstudios(db, ids) {
   await db.query("DELETE FROM Clientes_Estudios WHERE Estudio_ID IN (?)", [ids]);
   await db.query("DELETE FROM Profesionales_Estudios WHERE Estudio_ID IN (?)", [ids]);
   await db.query("DELETE FROM Estudios WHERE Estudio_ID IN (?)", [ids]);
-  return docs.map(d=>d.Ruta_Archivo);
+  return docs.map(d => d.Ruta_Archivo);
 }
+
 
 async function borrarUsuario(db, id) {
   const [propios] = await db.query("SELECT Estudio_ID FROM Estudios WHERE Creado_Por_ID = ?", [id]);
@@ -35,13 +38,13 @@ async function borrarUsuario(db, id) {
     "SELECT Caso_ID FROM Casos WHERE Cliente_ID = ? OR Creado_Por_ID = ? OR Responsable_ID = ?",
     [id, id, id]
   );
-  const [docs] = casos.length ? await db.query("SELECT Ruta_Archivo FROM Documentos WHERE Caso_ID IN (?)", [casos.map(c=>c.Caso_ID)]) : [[]];
-  archivos.push(...docs.map(d=>d.Ruta_Archivo));
+  const [docs] = casos.length ? await db.query("SELECT Ruta_Archivo FROM Documentos WHERE Caso_ID IN (?)", [casos.map(c => c.Caso_ID)]) : [[]];
+  archivos.push(...docs.map(d => d.Ruta_Archivo));
   await borrarCasos(db, casos.map(c => c.Caso_ID));
 
   await db.query("DELETE FROM Casos_Abogados WHERE Abogado_ID = ?", [id]);
   const [docsPropios] = await db.query("SELECT Ruta_Archivo FROM Documentos WHERE Subido_Por_ID = ?", [id]);
-  archivos.push(...docsPropios.map(d=>d.Ruta_Archivo));
+  archivos.push(...docsPropios.map(d => d.Ruta_Archivo));
   await db.query("DELETE FROM Documentos WHERE Subido_Por_ID = ?", [id]);
   await db.query("UPDATE Avances SET Publicado_Por_ID = NULL WHERE Publicado_Por_ID = ?", [id]);
   await db.query("DELETE FROM Avances WHERE Creado_Por_ID = ?", [id]);

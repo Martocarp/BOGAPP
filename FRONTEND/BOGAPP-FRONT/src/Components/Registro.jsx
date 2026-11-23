@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { enviarJSON } from "../api";
 
+
 function Registro({ tipo }) {
   const [form, setForm] = useState({ Nombre: "", Apellido: "", Email: "", Password: "", Confirmar: "", Matricula: "" });
   const [mensaje, setMensaje] = useState("");

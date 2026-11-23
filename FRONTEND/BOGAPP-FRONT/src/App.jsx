@@ -20,6 +20,7 @@ import ProDetalleCaso from "./pages/profesional/ProDetalleCaso";
 import ProPerfil from "./pages/profesional/ProPerfil";
 import ProIntegrantes from "./pages/profesional/ProIntegrantes";
 import ProConfiguracion from "./pages/profesional/ProConfiguracion";
+import ProSolicitudes from "./pages/profesional/ProSolicitudes";
 import Home_c from "./pages/Home_c";
 import Login from "./pages/Login";
 import Create_c from "./pages/Create_c";
@@ -31,6 +32,7 @@ import EliminarEstudios from "./Components/EliminarEstudios";
 import useAuth from "./context/useAuth";
 import "sweetalert2/dist/sweetalert2.min.css";
 import "./App.css";
+
 function LayoutAdmin() {
   const { usuario } = useAuth();
   return (
@@ -76,6 +78,7 @@ function LayoutAdmin() {
   );
 }
 // Cada tipo de cuenta tiene su ruta principal. RutaPrivada comprueba la sesión.
+
 function App() {
   return (
     <AuthProvider>
@@ -103,6 +106,7 @@ function App() {
             <Route index element={<ProDashboard />} />
             <Route path="estudios" element={<ProEstudios />} />
             <Route path="clientes" element={<ProClientes />} />
+            <Route path="solicitudes" element={<ProSolicitudes />} />
             <Route path="casos" element={<ProCasos />} />
             <Route path="casos/:id" element={<ProDetalleCaso />} />
             <Route path="integrantes" element={<ProIntegrantes />} />

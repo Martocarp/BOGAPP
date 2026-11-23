@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import { api, enviarJSON } from "../api";
 
+
 function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);

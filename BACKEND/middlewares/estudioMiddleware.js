@@ -1,6 +1,7 @@
 const db = require("../config/db");
 
 // Admin BOGAPP administra todos los estudios; ADMIN_ESTUDIO solo los suyos.
+
 function adminDeEstudio(req, res, next) {
   if (req.usuario.Tipo_Cuenta === "ADMIN_BOGAPP") return next();
   if (req.usuario.Tipo_Cuenta !== "PROFESIONAL") {

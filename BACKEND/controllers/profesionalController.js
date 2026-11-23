@@ -1,13 +1,16 @@
 const { db, estudioDe, intId } = require('../helpers/permisos');
 const { guardar, borrar, descargar } = require('../helpers/archivos');
+
 function error(res, e, message = 'Error al consultar MySQL') {
   console.error(message, e.message); return res.status(500).json({ message });
 }
+
 async function especializaciones(req, res) {
   try { const [rows] = await db.query('SELECT * FROM Especializaciones ORDER BY Nombre'); return res.json(rows); }
   catch (e) { return error(res, e, 'Ejecutá primero la migración de profesionales'); }
 }
 // Devuelve la ficha del profesional autenticado (el ID viene de la cookie, no de React).
+
 async function perfil(req, res) {
   try {
     const [rows] = await db.query(`SELECT u.Usuario_ID, u.Nombre, u.Apellido, u.Email, u.Matricula,
@@ -19,11 +22,12 @@ async function perfil(req, res) {
   } catch (e) { return error(res, e); }
 }
 // Guarda biografía, matrícula y lista de especializaciones seleccionadas.
+
 async function editarPerfil(req, res) {
   const { Biografia = '', Matricula = '', especializaciones = [], Cv_Visible = false } = req.body;
   if (typeof Biografia !== 'string' || Biografia.length > 2000 || typeof Matricula !== 'string' || Matricula.length > 50 ||
-      !Array.isArray(especializaciones) || especializaciones.length > 20 ||
-      !especializaciones.every(x => intId(x)) || new Set(especializaciones.map(Number)).size !== especializaciones.length) {
+    !Array.isArray(especializaciones) || especializaciones.length > 20 ||
+    !especializaciones.every(x => intId(x)) || new Set(especializaciones.map(Number)).size !== especializaciones.length) {
     return res.status(400).json({ message: 'Datos de perfil inválidos' });
   }
   const conn = await db.getConnection();
@@ -40,6 +44,7 @@ async function editarPerfil(req, res) {
   finally { conn.release(); }
 }
 // CV privado en el servidor: la base guarda solo el nombre y la ruta interna.
+
 async function subirCv(req, res) {
   if (!req.file) return res.status(400).json({ message: 'Seleccioná un PDF para el CV' });
   let nuevo;
@@ -53,6 +58,7 @@ async function subirCv(req, res) {
     return res.status(201).json({ message: 'Currículum PDF guardado' });
   } catch (e) { await borrar(nuevo); if (e.message.includes('formato') || e.message.includes('PDF')) return res.status(400).json({ message: e.message }); return error(res, e, 'Error al guardar CV'); }
 }
+
 async function bajarCv(req, res) {
   try {
     const [rows] = await db.query('SELECT Cv_Ruta, Cv_Nombre FROM Perfiles_Profesionales WHERE Usuario_ID = ?', [req.usuario.Usuario_ID]);
@@ -60,15 +66,17 @@ async function bajarCv(req, res) {
     return descargar(res, rows[0].Cv_Ruta, rows[0].Cv_Nombre);
   } catch (e) { return error(res, e); }
 }
+
 async function borrarCv(req, res) {
   try {
     const [rows] = await db.query('SELECT Cv_Ruta FROM Perfiles_Profesionales WHERE Usuario_ID = ?', [req.usuario.Usuario_ID]);
     await db.query('UPDATE Perfiles_Profesionales SET Cv_Ruta = NULL, Cv_Nombre = NULL, Cv_Visible = 0 WHERE Usuario_ID = ?', [req.usuario.Usuario_ID]);
     await borrar(rows[0]?.Cv_Ruta);
     return res.json({ message: 'CV eliminado' });
-  } catch(e) { return error(res,e); }
+  } catch (e) { return error(res, e); }
 }
 // El espacio activo determina qué clientes puede consultar el abogado.
+
 async function clientes(req, res) {
   const estudioId = intId(req.query.estudioId);
   try {
@@ -95,6 +103,7 @@ async function clientes(req, res) {
   } catch (e) { return error(res, e); }
 }
 // Particular: invitar cliente por ID. El CLIENTE debe aceptar antes de crear un caso.
+
 async function invitarParticular(req, res) {
   const clienteId = intId(req.body.Cliente_ID);
   if (!clienteId) return res.status(400).json({ message: 'Cliente_ID inválido' });
@@ -104,8 +113,9 @@ async function invitarParticular(req, res) {
     await db.query(`INSERT INTO Profesionales_Clientes (Profesional_ID, Cliente_ID, Estado, Origen) VALUES (?, ?, 'PENDIENTE', 'INVITACION')
       ON DUPLICATE KEY UPDATE Estado = IF(Estado = 'ACTIVO', 'ACTIVO', 'PENDIENTE'), Origen = IF(Estado = 'ACTIVO', Origen, 'INVITACION')`, [req.usuario.Usuario_ID, clienteId]);
     return res.status(201).json({ message: 'Invitación enviada; el cliente debe aceptarla' });
-  } catch(e) { return error(res,e); }
+  } catch (e) { return error(res, e); }
 }
+
 async function invitarEstudio(req, res) {
   const estudioId = intId(req.params.id), clienteId = intId(req.body.Cliente_ID);
   if (!clienteId || !estudioId) return res.status(400).json({ message: 'ID inválido' });
@@ -117,8 +127,9 @@ async function invitarEstudio(req, res) {
     await db.query(`INSERT INTO Clientes_Estudios (Estudio_ID, Usuario_ID, Estado, Origen) VALUES (?, ?, 'PENDIENTE', 'INVITACION')
       ON DUPLICATE KEY UPDATE Estado = IF(Estado = 'ACTIVO','ACTIVO','PENDIENTE'), Origen = IF(Estado = 'ACTIVO',Origen,'INVITACION')`, [estudioId, clienteId]);
     return res.status(201).json({ message: 'Invitación enviada al cliente' });
-  } catch(e) { return error(res,e); }
+  } catch (e) { return error(res, e); }
 }
+
 async function miembros(req, res) {
   const estudioId = intId(req.params.id);
   try {
@@ -127,9 +138,10 @@ async function miembros(req, res) {
       FROM Profesionales_Estudios pe JOIN Usuarios u ON u.Usuario_ID = pe.Usuario_ID
       WHERE pe.Estudio_ID = ? AND pe.Estado = 'ACTIVO' ORDER BY pe.Rol_Estudio, u.Apellido`, [estudioId]);
     return res.json(rows);
-  } catch(e) { return error(res,e); }
+  } catch (e) { return error(res, e); }
 }
 // Estadísticas para Recharts: CHARTS GENERAL o RANGOS de fechas.
+
 async function dashboard(req, res) {
   const estudio = req.query.espacio === 'estudio';
   const id = req.usuario.Usuario_ID;
@@ -153,15 +165,18 @@ async function dashboard(req, res) {
       GROUP BY DATE_FORMAT(c.Fecha_Apertura, '%Y-%m') ORDER BY mes DESC LIMIT 12`, params);
     const [docs] = await db.query(`SELECT COUNT(*) AS total FROM Documentos d JOIN Casos c ON c.Caso_ID = d.Caso_ID WHERE ${where}`, params);
     const [avances] = await db.query(`SELECT COUNT(*) AS total FROM Avances a JOIN Casos c ON c.Caso_ID = a.Caso_ID WHERE ${where}`, params);
-    const estadoMap = Object.fromEntries(estados.map(x=>[x.nombre, Number(x.cantidad)]));
-    const total = estados.reduce((n,x)=>n+Number(x.cantidad),0);
+    const estadoMap = Object.fromEntries(estados.map(x => [x.nombre, Number(x.cantidad)]));
+    const total = estados.reduce((n, x) => n + Number(x.cantidad), 0);
     // Clientes con al menos un caso en el período (coherente con RANGOS).
     const [clientesCount] = await db.query(`SELECT COUNT(DISTINCT c.Cliente_ID) AS total FROM Casos c WHERE ${where}`, params);
-    return res.json({ total, abiertos: estadoMap.ABIERTO || 0, enProceso: estadoMap.EN_PROCESO || 0,
+    return res.json({
+      total, abiertos: estadoMap.ABIERTO || 0, enProceso: estadoMap.EN_PROCESO || 0,
       cerrados: estadoMap.CERRADO || 0, clientes: clientesCount[0].total, documentos: docs[0].total,
-      avances: avances[0].total, estados, meses: meses.reverse(), periodo: desde ? {desde,hasta} : null });
-  } catch(e) { return error(res,e, 'Error al cargar estadísticas'); }
+      avances: avances[0].total, estados, meses: meses.reverse(), periodo: desde ? { desde, hasta } : null
+    });
+  } catch (e) { return error(res, e, 'Error al cargar estadísticas'); }
 }
+
 async function buscarCliente(req, res) {
   const email = String(req.query.email || '').trim().toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Ingresá el email completo del cliente' });
@@ -170,6 +185,7 @@ async function buscarCliente(req, res) {
     return res.json(rows[0] || null);
   } catch (e) { return error(res, e); }
 }
+
 async function clientesElegibles(req, res) {
   const estudioId = intId(req.query.estudioId);
   try {
@@ -181,5 +197,7 @@ async function clientesElegibles(req, res) {
     return res.json(rows);
   } catch (e) { return error(res, e); }
 }
-module.exports = { clientesElegibles, buscarCliente, especializaciones, perfil, editarPerfil, subirCv, bajarCv, borrarCv,
-  clientes, invitarParticular, invitarEstudio, miembros, dashboard };
+module.exports = {
+  clientesElegibles, buscarCliente, especializaciones, perfil, editarPerfil, subirCv, bajarCv, borrarCv,
+  clientes, invitarParticular, invitarEstudio, miembros, dashboard
+};

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import useAuth from "../context/useAuth";
 import { mostrarAlerta } from "../utils/alertas";
 
+
 function Salir() {
   const { salir } = useAuth();
   const navigate = useNavigate();

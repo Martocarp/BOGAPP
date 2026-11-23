@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const connection = require("../config/db");
 
 // El JWT solo incluye el ID. Rol y estado se consultan SIEMPRE en MySQL.
+
 function autenticar(req, res, next) {
   const token = req.cookies && req.cookies.bogapp_session;
   if (!token) return res.status(401).json({ message: "Iniciá sesión para continuar" });
@@ -22,6 +23,7 @@ function autenticar(req, res, next) {
     }
   );
 }
+
 
 function permitirRoles(...roles) {
   return function (req, res, next) {

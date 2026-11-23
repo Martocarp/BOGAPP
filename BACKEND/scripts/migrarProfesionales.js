@@ -3,9 +3,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const db = require("../config/db").promise();
 // DDL no es transaccional en MySQL. Hacer backup antes de ejecutarlo.
+
 function ident(s) { return '`' + String(s).replace(/`/g, '``') + '`'; }
 // Se ejecuta UNA SOLA VEZ o cuando reinstalamos: modifica estructura de MySQL, no vistas React.
 // La parte larga existe para conservar las claves foráneas de la tabla Casos.
+
 async function main() {
   const [cols] = await db.query(`SELECT IS_NULLABLE FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Casos' AND COLUMN_NAME = 'Estudio_ID'`);
@@ -67,7 +69,7 @@ async function main() {
     if (!origenParticular.length) await db.query("ALTER TABLE Profesionales_Clientes ADD COLUMN Origen ENUM('SOLICITUD','INVITACION') NOT NULL DEFAULT 'INVITACION'");
   }
   const sql = fs.readFileSync(path.join(__dirname, '../migrations/001_profesionales.sql'), 'utf8');
-  const statements = sql.replace(/^\s*--.*$/gm, '').split(';').map(s=>s.trim()).filter(Boolean);
+  const statements = sql.replace(/^\s*--.*$/gm, '').split(';').map(s => s.trim()).filter(Boolean);
   for (const stmt of statements) await db.query(stmt);
   console.log(`Migración aplicada correctamente (${statements.length} instrucciones SQL).`);
 }

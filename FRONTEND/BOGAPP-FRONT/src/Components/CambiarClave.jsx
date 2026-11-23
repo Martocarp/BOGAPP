@@ -3,6 +3,7 @@ import { enviarJSON } from '../api';
 import { mostrarAlerta } from '../utils/alertas';
 
 // Se reutiliza en Cliente, Profesional y Admin: el backend identifica al usuario por su sesión.
+
 function CambiarClave() {
   const [actual, setActual] = useState('');
   const [nueva, setNueva] = useState('');
